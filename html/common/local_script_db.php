@@ -132,7 +132,9 @@ EOT;
 	$fetch_all_tools = pg_fetch_all($result_indice);
 	foreach ($fetch_all_tools as $fetch_tools) {
 	//Se il tools compare nel webgis, allora lo accendo/mostro:
-	    echo "<script> " . $fetch_tools['tools_variable'] . " = false; </script>";
+	    if ($fetch_tools['tools_variable']) {
+	      echo "<script> " . $fetch_tools['tools_variable'] . " = false; </script>";
+	    }
 	}
 
 /* ************ GRID ************* */
@@ -219,13 +221,25 @@ EOT;
 		$store_definition = $fetch_local['store_definition'];
 		$grid_title = $fetch_local['grid_title'];
 		$column_definition = $fetch_local['column_definition'];
-		if ($fetch_local['store_definition'] and $fetch_local['column_definition'] and $fetch_local['grid_title']) {
+		$legend_name_lay = $fetch_local['legend_name'];
+		if (!$store_definition and !$grid_title and !$column_definition) {
+		  //in questo caso il layer non ha associato alcuna griglia attributi!
+		  $activeNode_function .= <<<EOT
+		  else if (active_node.text == $active_node_text) {
+		console.log("Layer '$legend_name_lay-$active_node_text' senza griglia degli attributi definita. Se si vuole attivare questa griglia, definire le variabili ColumnStore e StoreGrid per la variabile layer relativa, e caricare questi dati anche sul DB alla tabella webgis_ol_layers");
+		    title_grid = 'Griglia degli attributi non definita per il layer "$legend_name_lay"';
+		    store_grid = store_default;
+		    columns_grid = columns_default;
+		  }
+EOT;
+		}
+		else if ($fetch_local['store_definition'] and $fetch_local['column_definition'] and $fetch_local['grid_title']) {
 		  //se queste variabili sono definite sul DB allora e' possibile che questo layer abbia attiva la tabella attributi:
 		  $activeNode_function .= <<<EOT
 			else if (active_node.text == $active_node_text) {
-                title_grid = "$grid_title";
-                store_grid = $store_definition;
-                columns_grid = $column_definition;
+                  title_grid = "$grid_title";
+                  store_grid = $store_definition;
+                  columns_grid = $column_definition;
         		}
 EOT;
 		  //Definisco poi i casi particolari per modificare l'aspetto del grid:
@@ -397,7 +411,7 @@ EOT;
 
 /* ************ POPUP da DB ************* */
         //Adesso a seconda del tipo di webgis mi carico le impostazioni personalizzate per i LAYERS:
-	$query_popup = "SELECT ol_layer_idx, openlayer_name, default_legend_variable, webgis_idx, funzione_associata, url_link, url_name, url_options, grafici_stazione, grafici_tab_attivo, pop_html, pop_title, grafici_valore, grafici_codice, grafici_progr, grafici_tipostaz, grafici_tiporete FROM config.v_webgis_popups WHERE webgis_idx = $indice_webgis;";
+	$query_popup = "SELECT ol_layer_idx, openlayer_name, default_legend_variable, webgis_idx, funzione_associata, url_link, url_name, url_options, grafici_stazione, grafici_tab_attivo, pop_html, pop_title, grafici_valore, grafici_codice, grafici_progr, grafici_tipostaz, grafici_tiporete, grafici_composito FROM config.v_webgis_popups WHERE webgis_idx = $indice_webgis;";
         $result_popup = pg_query($conn_local,$query_popup);
         if (!$result_popup) {
             echo "console.log('Error on the query popup <br>".$query_popup."');";
@@ -421,6 +435,8 @@ EOT;
 	      $js_campo_codice = $fetch_popup['grafici_codice'];
               $js_campo_tipostaz = $fetch_popup['grafici_tipostaz'];
               $js_campo_progr = $fetch_popup['grafici_progr'];
+	      $js_composito = $fetch_popup['grafici_composito'];
+	      $js_composito_arr = explode(",", $js_composito);
 	      $js_code = <<<EOT
 	/*Codice semplice - da solo funziona:
 		$js_layername.events.on({
@@ -458,7 +474,7 @@ EOT;
                         if (a.max1==null) a.max1=0;
                         return b.max1 - a.max1; //reverse order
                       });
-		      $js_funzione(sorted[0], sorted[0]["tipo_rete"], "$js_tab_attivo", e.feature);
+		      $js_funzione(sorted[0], sorted[0]["tipo_rete"], "$js_tab_attivo", e.feature, '$js_composito');
                     }
                     else { //non si tratta di cluster
 			if ("$js_tipo_rete" == 'grafici_stazione') { //il dato proviene da una tabella con fonti uniche
@@ -467,13 +483,12 @@ EOT;
 			else { //il dato contiene piu fonti ed e' una vista
 			  var tipo_rete = e.feature.attributes.$js_tipo_rete;
 			}
-                        //$js_funzione(e.feature.attributes, "$js_stazione", "$js_tab_attivo", e.feature);
 console.log(e.feature.attributes);
 			//Per fare in modo che oggetti diversi non abbiano nomi dei campi completamente diversi, ne unifico almeno il codice identificativo, anche per mantenerlo in linea e coerente con la struttura FISSA assegnata nel caso di cluster:
 			e.feature.attributes['codice_istat_comune'] = e.feature.attributes.$js_campo_codice;
 			e.feature.attributes['progr_punto_com'] = e.feature.attributes.$js_campo_progr;
 			e.feature.attributes['tipo_staz'] = e.feature.attributes.$js_campo_tipostaz;
-			$js_funzione(e.feature.attributes, tipo_rete, "$js_tab_attivo", e.feature);
+			$js_funzione(e.feature.attributes, tipo_rete, "$js_tab_attivo", e.feature, '$js_composito');
 		    }
                   }
                 });

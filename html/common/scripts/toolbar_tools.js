@@ -356,7 +356,8 @@ toolbarItems.push(new Ext.Toolbar.Spacer({width:10}));
 
 
 //Metto fuori queste funzioni in modo tale da poterle richiamare anche passadno un indirizzo da URL:
-function showBasicURL(address=null) {
+function showBasicURL(address) {
+	address = typeof address !== 'undefined' ? address : null; //definisco valore di default
         advancedOptions = EXAMPLE_BASIC;
 	//var query = search_OSM.getValue();
 	if (address!="" && address) {
@@ -379,7 +380,8 @@ console.log("Address for nominatim: "+address);
            var safe = advancedOptions; //safe e' l'url richiamata
         }
 };
-function doBasicClick(address=null) {
+function doBasicClick(address) {
+	address = typeof address !== 'undefined' ? address : null; //definisco valore di default
         searchType = 'basic';
         var script = document.createElement('script');
         script.type = 'text/javascript';
@@ -848,8 +850,8 @@ var flanis_anime = new Ext.Button({
 //}
 
 var expo_bullettin = new Ext.Button({
-        handler: function() {window.open(root_dir_html+'/common/DATA/expo2015/bollettino_prob_EXPO.pdf');}
-        ,tooltip: "Apri previsioni probabilistiche per EXPO"
+        handler: function() {window.open(root_dir_html+'/common/DATA/expo2015/bollettino_prob.pdf');}
+        ,tooltip: "Apri previsioni probabilistiche"
         ,xtype:'tbbutton'
 	//PER ICONA:
 	//,text: ""
@@ -868,8 +870,8 @@ toolbarItems.push(new Ext.Toolbar.Spacer({width: 5}));
 //}
 
 var expo_meteo = new Ext.Button({
-        handler: function() {window.open(root_dir_html+'/common/DATA/expo2015/bollettino_meteo_EXPO.pdf');}
-        ,tooltip: "Apri bollettino meteo EXPO"
+        handler: function() {window.open(root_dir_html+'/common/DATA/expo2015/bollettino_meteo.pdf');}
+        ,tooltip: "Apri bollettino meteo"
         ,xtype:'tbbutton'
         ,text: "Bollettino Meteo"
         ,autoWidth: true

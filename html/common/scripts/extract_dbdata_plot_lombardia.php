@@ -1,7 +1,10 @@
 <?php
 /*
-Script per prelevare dati dal DB e restituirli come JSON per la costruzioni di multi grafici con HighCharts.
-Serve come ponte tra gli script javascript per la generazione dei grafici e il DB.
+Script pensato per essere generico, in realta' al momento non serve richiamarlo.
+Doveva fare da ponte tra gli script javascript per la genrazione dei grafici e il DB.
+Ma essendo che anche i grafici li faccio all'interno di un php, mi connetto al DB da la'.
+
+Lo tengo per casi futuri...
 
 OTTIMIZZAZIONI:
 - creare un'unica query per tutti i parametri modificando solo l'id_parametro?
@@ -23,9 +26,9 @@ $params_arr = explode(",", $params);
 
 if (isset($_GET['root_dir_html'])) $root_dir_html = $_GET['root_dir_html'];
 
-$realtimetable_from = 'realtime.meteo_real_time';
-$basetable_from = 'dati_di_base.rete_meteoidrografica';
-$timezone_data = 'UTC';
+$realtimetable_from = 'expo2015.v_meteo_real_time_lombardia';
+$basetable_from = 'expo2015.elencostazionisensori';
+$timezone_data = 'CET';
 //$codice_istat = '006159';
 //$progr_punto_com = '900';
 $codice_istat = $_GET['codice_istat'];
@@ -57,6 +60,7 @@ if (!$conn) { // Check if valid connection
         exit;
 }
 else {
+	//$query = "select id_conoide, data, media, valore from realtime.cumulata_bacini_2012 where id_conoide = $id_bacino AND data >= (now() - '14 days'::interval) ORDER BY data ASC;";
 //TEST:
 /*
 APPUNTI
@@ -65,16 +69,20 @@ APPUNTI
 - occorre ovviametne rendere il codice piu' flessibile nel caso in cui si vogliano richiedere piu' o meno sensori
 */
 $pass_time = 60;
-$query_temp = "WITH daysago AS (SELECT date_trunc('day', now()-'5 days'::interval) AS dataora) SELECT dd::timestamp without time zone as data, dati_staz.valore_originale, dati_staz.tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg, zradar_td(dati_staz.valore_originale, umidita.igro), 'TERMA' AS name, '°C' AS unit, 'line' AS type, 1 AS decimal, false AS step, 40 AS maxy, null AS miny FROM generate_series ( (SELECT dataora FROM daysago) , now(), '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.codice_istat_comune = '$codice_istat' AND a.progr_punto_com = $progr_punto_com AND id_parametro like 'TERMA%' AND data >= (SELECT dataora FROM daysago)) AS dati_staz ON (dd=dati_staz.data) LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale AS igro FROM $realtimetable_from a WHERE a.codice_istat_comune = '$codice_istat' AND a.progr_punto_com = $progr_punto_com AND id_parametro like 'IGRO%' AND data >= (SELECT dataora FROM daysago)) AS umidita ON (dd=umidita.data) ORDER BY data ASC;";
+$id_parametro = 'TERMA';
+$query_temp = "WITH daysago AS (SELECT date_trunc('day', now() at time zone '$timezone_data'-'5 days'::interval) AS dataora) SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg, 'TERMA' AS name, '°C' AS unit, 'line' AS type, 1 AS decimal, false AS step, 40 AS maxy, null AS miny FROM generate_series ( (SELECT dataora FROM daysago) , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_stazione = $codice_istat AND id_parametro = '$id_parametro' AND data >= (SELECT dataora FROM daysago)) AS dati_staz ON (dd=data) ORDER BY data ASC;";
 
-$query_igro = "WITH daysago AS (SELECT date_trunc('day', now()-'5 days'::interval) AS dataora) SELECT dd::timestamp without time zone as data, umidita.valore_originale, max(umidita.data_agg) OVER () AS data_agg, 'IGRO' AS name, '%' AS unit, 'line' AS type, 0 AS decimal, false AS step, 100 AS maxy, 0 AS miny FROM generate_series ( (SELECT dataora FROM daysago) , now(), '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale, data_agg FROM $realtimetable_from a WHERE a.codice_istat_comune = '$codice_istat' AND a.progr_punto_com = $progr_punto_com AND id_parametro like 'IGRO%' AND data >= (SELECT dataora FROM daysago)) AS umidita ON (dd=umidita.data) ORDER BY data ASC;";
+$id_parametro = 'IGRO';
+$query_igro = "WITH daysago AS (SELECT date_trunc('day', now() at time zone '$timezone_data'-'5 days'::interval) AS dataora) SELECT dd::timestamp without time zone as data, umidita.valore_originale, max(umidita.data_agg) OVER () AS data_agg, 'IGRO' AS name, '%' AS unit, 'line' AS type, 0 AS decimal, false AS step, 100 AS maxy, 0 AS miny FROM generate_series ( (SELECT dataora FROM daysago) , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale, data_agg FROM $realtimetable_from a WHERE a.id_stazione = $codice_istat AND id_parametro = '$id_parametro' AND data >= (SELECT dataora FROM daysago)) AS umidita ON (dd=umidita.data) ORDER BY data ASC;";
 
 $id_parametro = 'PLUV';
-//$query_pluv = "WITH daysago AS (SELECT date_trunc('day', now()-'5 days'::interval) AS dataora) SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg, 'PLUV' AS name, 'mm' AS unit, 'line' AS type, 1 AS decimal, 'right' AS step FROM generate_series ( (SELECT dataora FROM daysago) , now(), '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.codice_istat_comune = '$codice_istat' AND a.progr_punto_com = $progr_punto_com AND id_parametro like '$id_parametro%' AND data >= (SELECT dataora FROM daysago)) AS dati_staz ON (dd=data) ORDER BY data ASC;";
-$query_pluv = "WITH daysago AS (SELECT date_trunc('day', now()-'5 days'::interval) AS dataora) SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg, 'PLUV' AS name, 'mm/h' AS unit, 'column' AS type, 1 AS decimal, false AS step, null AS maxy, 0 AS miny FROM generate_series ( (SELECT dataora FROM daysago) , now(), '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_char(to_timestamp(data||ora, 'YYYY-MM-DDHH24:MI:SS')::timestamp - '1 minute'::interval,'YYYY-MM-DD HH24:00:00')::timestamp + '1 hour'::interval AS data, sum(valore_originale) AS valore_originale, max(tipologia_validaz) AS tipologia_validaz, max(data_agg) AS data_agg FROM $realtimetable_from a WHERE a.codice_istat_comune = '$codice_istat' AND a.progr_punto_com = $progr_punto_com AND id_parametro = '$id_parametro' AND data >= (SELECT dataora FROM daysago) GROUP BY to_char(to_timestamp(data||ora, 'YYYY-MM-DDHH24:MI:SS')::timestamp - '1 minute'::interval,'YYYY-MM-DD HH24:00:00')::timestamp + '$pass_time minute'::interval) AS dati_staz ON (dd=data) ORDER BY data ASC;";
+//dati puntuali:
+//$query_pluv = "WITH daysago AS (SELECT date_trunc('day', now() at time zone '$timezone_data'-'5 days'::interval) AS dataora) SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg, 'PLUV' AS name, 'mm' AS unit, 'line' AS type, 1 AS decimal, 'right' AS step FROM generate_series ( (SELECT dataora FROM daysago) , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_stazione = $codice_istat AND id_parametro = '$id_parametro' AND data >= (SELECT dataora FROM daysago)) AS dati_staz ON (dd=data) ORDER BY data ASC;";
+//dati cumulati ogni pass_time:
+$query_pluv = "WITH daysago AS (SELECT date_trunc('day', now() at time zone '$timezone_data'-'5 days'::interval) AS dataora) SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg, 'PLUV' AS name, 'mm/h' AS unit, 'line' AS type, 1 AS decimal, 'right' AS step, null AS maxy, null AS miny FROM generate_series ( (SELECT dataora FROM daysago) , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_char(to_timestamp(data||ora, 'YYYY-MM-DDHH24:MI:SS')::timestamp - '1 minute'::interval,'YYYY-MM-DD HH24:00:00')::timestamp + '$pass_time minute'::interval AS data, sum(valore_originale) AS valore_originale, max(tipologia_validaz) AS tipologia_validaz, max(data_agg) AS data_agg FROM $realtimetable_from a WHERE a.id_stazione = $codice_istat AND id_parametro = '$id_parametro' AND data >= (SELECT dataora FROM daysago) GROUP BY to_char(to_timestamp(data||ora, 'YYYY-MM-DDHH24:MI:SS')::timestamp - '1 minute'::interval,'YYYY-MM-DD HH24:00:00')::timestamp + '$pass_time minute'::interval) AS dati_staz ON (dd=data) ORDER BY data ASC;";
 
 $id_parametro = 'NIVO';
-$query_nivo = "WITH daysago AS (SELECT date_trunc('day', now()-'5 days'::interval) AS dataora) SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg, 'NIVO' AS name, 'cm' AS unit, 'line' AS type, 1 AS decimal, false AS step, null AS maxy, 0 AS miny FROM generate_series ( (SELECT dataora FROM daysago) , now(), '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.codice_istat_comune = '$codice_istat' AND a.progr_punto_com = $progr_punto_com AND id_parametro like '$id_parametro%' AND data >= (SELECT dataora FROM daysago)) AS dati_staz ON (dd=data) ORDER BY data ASC;";
+$query_nivo = "WITH daysago AS (SELECT date_trunc('day', now() at time zone '$timezone_data'-'5 days'::interval) AS dataora) SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg, 'NIVO' AS name, 'cm' AS unit, 'line' AS type, 1 AS decimal, false AS step, null AS maxy, 0 AS miny FROM generate_series ( (SELECT dataora FROM daysago) , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_stazione = $codice_istat AND id_parametro = '$id_parametro' AND data >= (SELECT dataora FROM daysago)) AS dati_staz ON (dd=data) ORDER BY data ASC;";
 
 	if ($tipo_json=='multiple_graphs') {
 	  //$result = pg_query($conn, $query);
@@ -100,8 +108,8 @@ $query_nivo = "WITH daysago AS (SELECT date_trunc('day', now()-'5 days'::interva
 		    $datasets['step'] = $row['step'];
 		    $datasets['maxY'] = $row['maxy'];
 		    $datasets['minY'] = $row['miny'];
-                    $datasets['timezone'] = $timezone_data;
-                    $datasets['data'][] = is_null($row[1]) ? null : floatval($row[1]); //ternary operation altrimenti il floatval riporta a zero i valori nulli
+		    $datasets['timezone'] = $timezone_data;
+                    $datasets['data'][] = is_null($row[1]) ? null : floatval($row[1]); //ternary operation altrimenti il floatval riporta a zero i valori nul
 		  }
                 $data_array['xData'] = $xData;
 		//Se voglio comandare la costruzione dei grafici da qui allora:

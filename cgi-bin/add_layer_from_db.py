@@ -48,7 +48,6 @@ try:
 except:
   root_dir_html = ""
 
-step=2
 try:
   step = int(fs["step"].value)
   assert step in [1,2,3], "valore variabile 'step' non consentita"
@@ -60,7 +59,6 @@ except AssertionError, e:
 except:
   print "Error parsing parameters: need 'step' and 'root_dir_html' variable"
   exit()
-
 
 
 page_template = '''
@@ -508,7 +506,7 @@ def choose_stab():
     meta = MetaData()
     #Definiamo le tabelle di destinazione:
     with engine.connect() as conn:
-        conn.execute("SET search_path TO config, public")
+        conn.execute("SET search_path TO config, public;")
         meta = MetaData()
         sql = "SELECT webgis_idx AS column_name, webgis_name || '  #' || webgis_idx AS label, webgis_description, attivo FROM {0} ORDER BY webgis_name;".format(source_table)
         result = conn.execute(text(sql))
@@ -552,7 +550,7 @@ def update_data():
         print "<script>"
 
 	#Inizio a costruire la tabella contenente i layer gia' definiti:
-	print '''var table_str = "<table class='layer_tb' id='layer_tb'><th>#</th><th>Layer</th><th>Descrizione</th><th style='display:none;'>Ins/Upd</th><th>Gruppo</th><th colspan='3'>&nbsp;</th><th>Geometria</th><th colspan='2'>Ordine</th><th>&nbsp;</th><th>&nbsp;</th></table>";'''
+	print '''var table_str = "<table class='layer_tb' id='layer_tb'><th>#</th><th>Layer<br/>(clicca per gestire popup)</th><th>Descrizione</th><th style='display:none;'>Ins/Upd</th><th>Gruppo</th><th colspan='3'>&nbsp;</th><th>Geometria</th><th colspan='2'>Ordine</th><th>&nbsp;</th><th>&nbsp;</th></table>";'''
 	print '''$( ".toInsert" ).append(table_str);'''
         for first_row in result:
             #print '''var element_label = $("#drop option[value='%s']").text();''' % (first_row['layer_idx'])
@@ -576,7 +574,9 @@ def update_data():
 	    #print '''var options_group = '%s';''' % (options_group)  #creo questa variabile anche su JS perche' mi potra' servire
             print '''var select_group = '%s';''' % (select_group)
             #Adesso costruisco le varie righe che contengono i layer:
-	    print '''var new_element = "<tr id=p_" + element_id + " class='tablerow'><td class='order_in_webgis'></td><td class='legendName'title='variabile OL="+value_ol_variable+"'>" + value_toinsert + "</td> <td>" +value_description + "</td> " +
+	    print '''var new_element = "<tr id=p_" + element_id + " class='tablerow'><td class='order_in_webgis'></td><td class='legendName'title='variabile OL="+value_ol_variable+"'>" +
+		"<a href='"+root_dir_html+"/cgi-bin/add_popup_on_layer.py?root_dir_html="+root_dir_html+"&step=1&id_stab={0}&id_layer="+element_id+"&ol_layer="+value_ol_variable+"&nome="+value_toinsert+"' target='_blank'>" +
+		value_toinsert + "</a></td> <td>" +value_description + "</td> " +
 		"<td class='updateOrInsert' style='display:none;'>U</td>" +
                 "<td class='group_index' style='text-align:center;'>" + select_group + "</td>" +
 		"<td class='select' style='text-align:center;'><span class='button-checkbox'> <button name='select_btn' type='button' class='btn' data-color='info'>select</button> <input type='checkbox' style='display:none;' class='hidden' " + select_str + " /> </span> </td>" +
@@ -587,7 +587,7 @@ def update_data():
 		"<td style='text-align:center;cursor:pointer;'><img src='"+root_dir_html+"/common/icons/down_button.png' title='Sposta dietro' width='20' class='down_button' /></td>" +
 		"<td> &nbsp; </td>" +
 		"<td style='text-align:center;cursor:pointer;'><img src='"+root_dir_html+"/common/icons/remove.png' title='Rimuovi layer' width='16' class='remove_button' /></td></tr>";
-	    '''
+	    '''.format(id_stab)
 
 	    #APpendo i layer del webgis alla tabella:
 	    print '''$( ".layer_tb" ).append(new_element);'''
@@ -849,15 +849,14 @@ if step==1:
 
 #Inserisco i valori sul FORM HTML:
 if step==2:
-  try:
+  '''try:
     root_dir_html = str(fs["root_dir_html"].value)
   except:
-    root_dir_html = ""
+    root_dir_html = ""'''
   try:
+    #table_columns = str(fs["table"].value)
     id_stab = int(fs["id_stab"].value)
     nome_stab = str(fs["nome"].value)
-    #id_stab = 9
-    #nome_stab = "PROVA"
     table_insert = 'config.webgis_layers'
     table_from = 'config.v_webgis_custom_settings'
     table_group = 'config.webgis_groups'
@@ -885,6 +884,7 @@ if step==2:
     result = conn.execute(text(sql))
     first_row = result.fetchone()
     occorrenze = first_row['conta']
+
     #In ogni caso mi serve scaricare tutti i gruppi definiti su DB:
     sql_group = "SELECT * FROM {0} ORDER BY legend_group_name;".format(table_group)
     result_group = conn.execute(text(sql_group))
@@ -914,7 +914,7 @@ if step==3:
   try:
     import simplejson as json
     import logging
-    logging.basicConfig(filename='/tmp/sqlalchemy_rir.log')
+    logging.basicConfig(filename='/tmp/add_layer_from_db.log')
     logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
 
     #Recupero i dati passati con metodo GET ma anche POST:

@@ -641,6 +641,11 @@ elif active_queries==9: #interrogo solo i raster DPC, mosaico LEMA, Meteosat e i
     precipitazione("/var/www/html/common/DATA/raster/", stop_raster)
     meteosat("/var/www/html/common/DATA/raster/")
     raster_idro("/var/www/html/common/DATA/idro/PLUV/")
+elif active_queries==10: #Interrogo solo Meteosat
+    print "<ul><li><a href='#tabs-4'>Meteosat</a></li></ul>"
+    #stop_raster = ["_composite_", "_ist_bis", "_dpc_ist"]
+    #precipitazione("/var/www/html/common/DATA/raster/", stop_raster)
+    meteosat("/var/www/html/common/DATA/raster/")
 
 
 print '</div>'

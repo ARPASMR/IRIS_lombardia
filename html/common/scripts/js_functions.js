@@ -33,13 +33,14 @@ function tipologia2title(tipologia) {
   else return 'sconosciuto';
 }
 
-function grafici_rete(e, stazioni, tab_attivo, layer) {
+function grafici_rete(e, stazioni, tab_attivo, layer, composito) {
+  composito = typeof composito !== 'undefined' ? composito : "2"; //definisco valori di default: in questo caso faccio solo i grafici semplici
     var width_plots = Math.round(screen_w * 0.80);
     var effects = "location=0,width="+width_plots+",height=550,toolbar=0,resizable=1,scrollbars=1,status=0,titlebar=1,menubar=0";
     var custom_height = 420; //altezza di default del frame
     var wname = "dati_stazione";
     var titles = "";
-    var links = "";
+    var links = root_dir_html+"/common/scripts/plot_rete.php";
     //provo a generare una url piu' complessa per creare dei grafici con le nuove librerie Highcharts:
     var parametri = "";
 
@@ -48,7 +49,6 @@ function grafici_rete(e, stazioni, tab_attivo, layer) {
         var codice_istat = codice.substring(0, 6);
         var progr_punto = codice.substring(6);
         titles = 'Portata,Livelli';
-        links = root_dir_html+"/common/scripts/plot_rete.php";
         parametri = 'PORTATA_BIS,IDRO_BIS';
         wname = "idrometri_bis";
   }
@@ -57,7 +57,6 @@ function grafici_rete(e, stazioni, tab_attivo, layer) {
         var codice_istat = codice;
         var progr_punto = codice.substring(6); //variabile fittixzio in questo caso mi basta solo il codice
         titles = 'Andamento SPI';
-        links = root_dir_html+"/common/scripts/plot_rete.php";
         parametri = tab_attivo;
         wname = "bacini_spi";
   }
@@ -66,7 +65,6 @@ function grafici_rete(e, stazioni, tab_attivo, layer) {
         var codice_istat = codice;
         var progr_punto = codice.substring(6); //variabile fittixzio in questo caso mi basta solo il codice
         titles = 'Andamento PALMER';
-        links = root_dir_html+"/common/scripts/plot_rete.php";
         parametri = tab_attivo;
         wname = "bacini_pal";
   }
@@ -74,8 +72,7 @@ function grafici_rete(e, stazioni, tab_attivo, layer) {
         var codice = e.codice_istat_comune;
         var codice_istat = codice;
         var progr_punto = e.progr_punto_com_txt;
-        titles = 'Smart - Slops';
-        links = root_dir_html+"/common/scripts/plot_rete.php";
+        titles = 'Slops';
         parametri = tab_attivo;
         wname = "smart_slops";
   }
@@ -84,7 +81,6 @@ function grafici_rete(e, stazioni, tab_attivo, layer) {
     var codice_istat = codice.substring(0,6);
     var progr_punto = codice.substring(6); //variabile fittixzio in questo caso mi basta solo il codice
     titles = 'Bilancio IDRO';
-    links = root_dir_html+"/common/scripts/plot_rete.php";
     parametri = tab_attivo;
     wname = "bilancidro";
   }
@@ -92,7 +88,6 @@ function grafici_rete(e, stazioni, tab_attivo, layer) {
     var codice_istat = e.codice_istat_comune;
     var progr_punto = e.progr_punto_com;
     titles = 'Previsioni MC-FEWS,Previsioni MC,Probabilistiche FEWS';
-    links = root_dir_html+"/common/scripts/plot_rete.php";
     parametri = tab_attivo + ',previMC,previPROB';
     //aumento l'altezza della finestra per rendere i grafici piu' leggibili:
     var effects = "location=0,width="+width_plots+",height=650,toolbar=0,resizable=1,scrollbars=1,status=0,titlebar=1,menubar=0";
@@ -103,15 +98,31 @@ function grafici_rete(e, stazioni, tab_attivo, layer) {
     var codice_istat = e.codice_istat_comune;
     var progr_punto = e.progr_punto_com;
     titles = 'Previsioni MC-FEWS';
-    links = root_dir_html+"/common/scripts/plot_rete.php";
     parametri = tab_attivo;
     //aumento l'altezza della finestra per rendere i grafici piu' leggibili:
     var effects = "location=0,width="+width_plots+",height=650,toolbar=0,resizable=1,scrollbars=1,status=0,titlebar=1,menubar=0";
     custom_height = 510;
     wname = "previpo";
   }
+  else if (stazioni=='fews') {
+    var codice_istat = e.codice_istat_comune;
+    var progr_punto = e.progr_punto_com;
+    titles = 'Previsioni MC-FEWS';
+    parametri = tab_attivo;
+    custom_height = 510;
+    wname = "fews";
+  }
+  else if (stazioni=='fest') {
+    var codice_istat = e.codice_istat_comune;
+    var progr_punto = e.progr_punto_com;
+    titles = 'Fest soglie';
+    parametri = tab_attivo;
+    custom_height = 510;
+    wname = "fest";
+  }
   else if (stazioni=='test_lm') {
     //provo a caricare i grafici per idsensore e non per idparametro
+    //var codice_istat = e.idstazione;
     var codice_istat = e.codice_istat_comune;
     var progr_punto = e.progr_punto_com;
     var idsensore = e.progr_punto_com.replace('{','').replace('}',''); //su Db e' un array
@@ -119,13 +130,14 @@ function grafici_rete(e, stazioni, tab_attivo, layer) {
     var idsensore_arr = idsensore.split(",");
     var tipologia_arr = tipologia.split(",");
     for (var i = 0; i < idsensore_arr.length; i++) {
-        titles += "@"+tipologia2title(tipologia_arr[i])+'-'+idsensore_arr[i]+"@";
-        parametri += "@"+tipologia_arr[i]+"|"+idsensore_arr[i]+"@";
-        if (tipologia_arr[i].indexOf('VV') !== -1) {
-          titles += "@Rose-"+idsensore_arr[i]+"@";
-          parametri += "@ROSE|"+idsensore_arr[i]+"@";
-        }
-        if (tipologia_arr[i].indexOf(tab_attivo) !== -1) tab_attivo = tab_attivo + '|' + idsensore_arr[i];
+	titles += "@"+tipologia2title(tipologia_arr[i])+'-'+idsensore_arr[i]+"@";
+	//parametri += "@"+tipologia2parametro(tipologia_arr[i])+"@";
+	parametri += "@"+tipologia_arr[i]+"|"+idsensore_arr[i]+"@";
+	if (tipologia_arr[i].indexOf('VV') !== -1) {
+	  titles += "@Rose-"+idsensore_arr[i]+"@";
+	  parametri += "@ROSE|"+idsensore_arr[i]+"@";
+	} 
+	if (tipologia_arr[i].indexOf(tab_attivo) !== -1) tab_attivo = tab_attivo + '|' + idsensore_arr[i];
     }
     titles = titles.replace(/@@/g, ',');
     titles = titles.replace(/@/g, '');
@@ -187,6 +199,10 @@ function grafici_rete(e, stazioni, tab_attivo, layer) {
             titles += "@RadGamma3@";
             parametri += "@GAMMA3@";
     }
+    if (e.tipo_staz.search("W") >= 0) {
+            titles += "@Visibilita@";
+            parametri += "@VIS@";
+    }
 
     titles = titles.replace(/@@/g, ',');
     titles = titles.replace(/@/g, '');
@@ -206,18 +222,24 @@ function grafici_rete(e, stazioni, tab_attivo, layer) {
         links = root_dir_html+"/common/scripts/plot_rete_iris_lm.php";
     }
     else if (stazioni=='idrometri') {
-        titles = 'Idrometro,Portata,ScaleDeflusso,MassimiIdrologici';
-        links = root_dir_html+"/common/scripts/plot_rete.php";
-        parametri = 'IDRO,PORTATA,DEFLUSSO,MAX_IDRO';
+	if (e.tipo_staz.search("Q") >= 0) {
+      titles = 'Idrometro,Portata,ScaleDeflusso,MassimiIdrologici';
+          links = root_dir_html+"/common/scripts/plot_rete.php";
+          parametri = 'IDRO,PORTATA,DEFLUSSO,MAX_IDRO';
+    }
+	else {
+          titles = 'Idrometro,Portata,ScaleDeflusso,MassimiIdrologici';
+          links = root_dir_html+"/common/scripts/plot_rete.php";
+          parametri = 'IDRO,PORTATA$,DEFLUSSO$,MAX_IDRO';
+	}
     }
     /*if (stazioni=='meteoidro_lm') var uri = root_dir_html+"/common/scripts/jquery_tab_lombardia.php?titles="+titles+"&links="+links+"&parametri="+parametri+"&id_staz="+codice_istat+"&tipo_tab=1&active_tab="+tab_attivo+"&root_dir_html="+root_dir_html+"&custom_height="+custom_height;
     else */
-    var uri = root_dir_html+php_url+"?titles="+titles+"&links="+links+"&parametri="+parametri+"&codice_istat="+codice_istat+"&progr_punto="+progr_punto+"&tipo_tab=1&active_tab="+tab_attivo+"&root_dir_html="+root_dir_html+"&custom_height="+custom_height;
+    var uri = root_dir_html+php_url+"?titles="+titles+"&links="+links+"&parametri="+parametri+"&codice_istat="+codice_istat+"&progr_punto="+progr_punto+"&tipo_tab=1&active_tab="+tab_attivo+"&root_dir_html="+root_dir_html+"&custom_height="+custom_height+"&composito="+composito+"&stazioni="+stazioni;
     var pop_options = effects+",left=120,top=120";
     open_popup(uri, wname, pop_options, layer);
 }
 ///////////////////// FINE POPUP INFO /////////////////////
-
 
 ///////////////////// ACTIVE LAYER /////////////////////
 //Funzione che intercetta l'accensione di un layer:
@@ -281,7 +303,9 @@ function activeLayer(layer, checked) {
 
 ///////////////////// CALCOLO BANDE GIORNO e NOTTE per GRAFICI /////////////////////
 //IN SVILUPPO PLOTBANDS per distinguere eil GIORNO e la NOTTE
-function calc_day_and_nigth(ilat = 45, ilon = 8) {
+function calc_day_and_nigth(ilat, ilon) {
+  ilat = typeof ilat !== 'undefined' ? ilat : 45; //definisco valori di default
+  ilon = typeof ilon !== 'undefined' ? ilon : 8; //definisco valori di default
   //demo: ora di centroide Piemonte:
   var times = SunCalc.getTimes(new Date(), ilat, ilon);
   var sunrise_HH = times['sunriseEnd'].getUTCHours();
@@ -317,6 +341,46 @@ console.log(times);
     });
     lowest_YYMMDD.setDate( lowest_YYMMDD.getDate() + 1);
     lowest_YYMMDD_ms = lowest_YYMMDD.getTime();
+  }
+}
+function calc_step_orario(ilat, ilon, steph, stepn) {
+  ilat = typeof ilat !== 'undefined' ? ilat : 45; //definisco valori di default
+  ilon = typeof ilon !== 'undefined' ? ilon : 8; //definisco valori di default
+  steph = typeof steph !== 'undefined' ? steph : 12; //definisco valori di default
+  stepn = typeof stepn !== 'undefined' ? stepn : 6; //definisco valori di default
+//per le previsioni bollettino piene, parto con un default di 12h e 5 step
+console.log(last_data_oss);
+  if (last_data_oss==0) var highest = today;
+  else var highest = new Date(last_data_oss); //oggetto Date
+  //var max_time = highest.getTime() + (steph*stepn*60*60*1000);
+  start_time = highest.getTime(); //time di partenza delle bande
+  i = 0;
+  //while ( start_time < max_time.getTime()) {
+  while ( i < stepn) {
+    lowest_YYMMDD = new Date(start_time); //oggetto Date
+    //arrive_time = start_time + ( (steph+2) *60*60*1000); //tolgo 2h cosi da avere della sovrapposizione bella da vedere
+    arrive_time = start_time + ( steph *60*60*1000); //senza sovrapposizione
+    arrive_date = new Date(arrive_time);
+    from_plotband = Date.UTC(lowest_YYMMDD.getFullYear(), lowest_YYMMDD.getMonth(), lowest_YYMMDD.getDate(), lowest_YYMMDD.getUTCHours(), lowest_YYMMDD.getUTCMinutes());
+    to_plotband = Date.UTC(arrive_date.getFullYear(), arrive_date.getMonth(), arrive_date.getDate(), arrive_date.getUTCHours(), arrive_date.getUTCMinutes());
+    var chart = $('#container').highcharts();
+    colorsA = 255-(i*10);
+    colorsB = 255-(i*20);
+    colorsC = 200;//-(i*5);
+    //oppure random:
+    /*colorsA = Math.floor(Math.random() * 255) + 0;
+    colorsB = Math.floor(Math.random() * 255) + 0;
+    colorsC = Math.floor(Math.random() * 255) + 0;*/
+    chart.xAxis[0].addPlotBand({
+      from: from_plotband,
+      to: to_plotband,
+      //color: 'rgba(252, 255, 197, 0.4)',
+      color: 'rgba('+colorsB+','+colorsA+','+colorsC+', 0.6)',
+      id: 'plot-band-'+i
+    });
+    i++;
+    //start_time = arrive_time - (2*60*60*1000); //ritolgo le 2h che ho aggiunto per la sovrapposizione grafica bella da vedere
+    start_time = arrive_time; //nessuna sovrapposizione
   }
 }
 ///////////////////// FINE CALCOLO BANDE GIORNO e NOTTE per GRAFICI /////////////////////

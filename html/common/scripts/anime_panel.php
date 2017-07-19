@@ -152,6 +152,7 @@ var OL_3785 = OL_3857;
 <?php
 $script_js = '<script type="text/javascript" src="'.$root_dir_html.'/jQuery/jquery-1.10.2.min.js"></script>';
 $script_js .= '<script type="text/javascript" src="'.$root_dir_html.'/jQuery/jquery-ui.js"></script>';
+$script_js .= '<script src="https://maps.googleapis.com/maps/api/js"></script>';
 $script_js .= '<script type="text/javascript" src="'.$root_dir_html.'/common/scripts/js_functions.js"></script>';
 $script_js .= '<script type="text/javascript" src="'.$root_dir_html.'/common/tematismi/base_layers.js"></script>';
 $script_js .= '<script type="text/javascript" src="'.$root_dir_html.'/common/tematismi/theme_rasters.js"></script>';
@@ -278,6 +279,7 @@ function anime_storm(d) {
 /* ANIMAZIONE RASTER */
 //percorso dei raster meteo per lanimazione:
 var url_raster_anim = root_dir_html+"/common/DATA/raster/animation/googlemap_ist_T"; //default
+//var raster_label = "Pioggia istantanea: animazione2"+group_radar; //default
 var raster_label = "Pioggia istantanea: animazione2"; //default
 var bounds = new OpenLayers.Bounds(673811.859, 5310564.071, 1254923.782, 5881520.640); //coord dal tiff gia' in 900913
 var size = new OpenLayers.Size(515, 506);
@@ -291,6 +293,7 @@ function set_raster_url(layer_selected) {
 	formato_data = data_table[raster_gid]['formato_data'];
 	index = data_table[raster_gid]['data_index'].split('@@');
 	url_raster_anim = path_raster + raster_file.substring(0, index[0]);
+	//raster_label = $("#layer_choice option:selected").text() + ": animazione2" + group_radar;
 	raster_label = $("#layer_choice option:selected").text() + ": animazione2";
 	bounds_str = "new OpenLayers.Bounds("+(data_table[raster_gid]['bounds3857']).replace(/@@/g, ',')+")";
 	bounds = eval(bounds_str);

@@ -66,7 +66,10 @@
         });
 */
 
-function createPopup(evt, html_feature="", title_pop="") {
+function createPopup(evt, html_feature, title_pop) {
+
+	html_feature = typeof html_feature !== 'undefined' ? html_feature : ""; //definisco valori di default
+	title_pop = typeof title_pop !== 'undefined' ? title_pop : ""; //definisco valori di default
 
 	var feature = evt.feature;
 	//var html_feature; //definizione contenuto della popup
