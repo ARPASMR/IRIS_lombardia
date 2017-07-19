@@ -7,7 +7,7 @@ Alcune configurazioni di base
 #eventuale proxy server:
 global proxies
 #proxies = {'http': 'http://proxy.arpa.piemonte.it:3128/'}
-proxies = {'http': ''}
+proxies = {'http': 'http://meteo:%meteo2010@proxy2.arpa.local:8080/'}
 
 #connessione al DB - utente in lettura:
 db_name = 'iris_base'

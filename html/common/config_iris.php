@@ -8,8 +8,8 @@ $root_dir_cgi = '/cgi-bin';
 $root_dir_script = '/common/webgis_central.php';
 //$proxies_http = 'proxy.arpa.piemonte.it';
 //$proxies_port = '3128';
-$proxies_http = '';
-$proxies_port = '';
+$proxies_http = 'meteo:%meteo2010@proxy2.arpa.local';
+$proxies_port = '8080';
 
 $conn_string = "host=localhost port=5432 dbname=iris_base user=webgis password=webgis$2013%";
 $conn_string_edit = "host=localhost port=5432 dbname=iris_base user=radar password=dirac0";

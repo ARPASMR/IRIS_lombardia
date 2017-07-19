@@ -25,7 +25,7 @@ include_once('../config_iris.php');
 
 date_default_timezone_set('UTC');
 
-$realtimetable_from = 'realtime.v_meteo_real_time_lm';
+$realtimetable_from = 'realtime.v_meteo_real_time';
 $basetable_from = 'dati_di_base.v_anagraficasensori';
 $timezone_data = 'CET';
 
@@ -68,16 +68,17 @@ if($id_parametro=='PP') {
 	//Riconverto il parametro secondo quelli classici per mantenere le impostazioni sui grafici:
 	$id_parametro='PLUV';
 }
-else if($id_parametro=='NIVO') {
+else if($id_parametro=='N') {
 	//query che crea serie temporale costante passo 30minuti:
-	$query = "SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone) from $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like '$id_parametro%') , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale*100 as valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like '$id_parametro%') AS dati_staz ON (dd=data) ORDER BY data ASC;";
+	$query = "SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like '$id_parametro%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale*100 as valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like '$id_parametro%') AS dati_staz ON (dd=data) ORDER BY data ASC;";
 	//Aggiungo dati cumulata pioggia per validazione con lo stesso step temporale dei dati nivo:
-	$query_cumulata = "SELECT dd::timestamp without time zone as data, valore_originale FROM generate_series ( (select min(to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone) from $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like '$id_parametro%') , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT data+ora::time AS data, sum(valore_originale) OVER (ORDER BY data+ora::time) as valore_originale FROM $realtimetable_from WHERE id_stazione = $cod_staz AND id_parametro ='PLUV') AS dati_staz ON (dd=data) ORDER BY data ASC;";
+	//$query_cumulata = "SELECT dd::timestamp without time zone as data, valore_originale FROM generate_series ( (select min(to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone) from $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like '$id_parametro%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT data+ora::time AS data, sum(valore_originale) OVER (ORDER BY data+ora::time) as valore_originale FROM $realtimetable_from WHERE id_stazione = $cod_staz AND id_parametro ='PLUV') AS dati_staz ON (dd=data) ORDER BY data ASC;";
 	//Aggiungo dati temperatura per validazione:
-	$query_temp = "SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone) from $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'TERMA%') , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'TERMA%') AS dati_staz ON (dd=data) ORDER BY data ASC;"; 
+	//$query_temp = "SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone) from $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'TERMA%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'TERMA%') AS dati_staz ON (dd=data) ORDER BY data ASC;"; 
+	$id_parametro='NIVO';
 }
 else if($id_parametro=='I') {
-        $query = "SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore= $idsensore AND id_parametro like '$id_parametro%') , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore= $idsensore AND id_parametro = (select id_parametro FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%' ORDER BY id_parametro LIMIT 1) ) AS dati_staz ON (dd=data) ORDER BY data ASC;";
+        $query = "SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore= $idsensore AND id_parametro like '$id_parametro%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore= $idsensore AND id_parametro = (select id_parametro FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%' ORDER BY id_parametro LIMIT 1) ) AS dati_staz ON (dd=data) ORDER BY data ASC;";
         //Riconverto il parametro secondo quelli classici per mantenere le impostazioni sui grafici:
         $id_parametro='IDRO';
 }
@@ -94,18 +95,22 @@ else if($id_parametro=='PORTATA') {
 	//Nel caso della PORTATA esiste solo il valore_validato. Alcune stazioni, avendo piu' idrometri, hanno anche piu' valori di portata. A noi pero' al momento interessa solo PORTATA:
 	//$query = "SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_validato, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.codice_istat_comune = '$codice_istat' AND a.progr_punto_com = $progr_punto_com AND id_parametro like '$id_parametro' ORDER BY data ASC;";
 	//provo query che crea serie temporale costante passo 30minuti:
-        $query = "SELECT dd::timestamp without time zone as data, valore_validato, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone) from $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like '$id_parametro') , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_validato, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like '$id_parametro') AS dati_staz ON (dd=data) ORDER BY data ASC;";
+        $query = "SELECT dd::timestamp without time zone as data, valore_validato, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone) from $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like '$id_parametro') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_validato, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like '$id_parametro') AS dati_staz ON (dd=data) ORDER BY data ASC;";
 }
 else if($id_parametro=='DEW') {
-	$query = "SELECT dd::timestamp without time zone as data, dati_staz.valore_originale, dati_staz.tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg, zradar_humidex(dati_staz.valore_originale, umidita.igro) FROM generate_series ( (select min(to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone) from $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'TERMA%') , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'TERMA%') AS dati_staz ON (dd=dati_staz.data) LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale AS igro FROM $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'IGRO%') AS umidita ON (dd=umidita.data) ORDER BY data ASC;";
+	$query = "SELECT dd::timestamp without time zone as data, dati_staz.valore_originale, dati_staz.tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg, zradar_humidex(dati_staz.valore_originale, umidita.igro) FROM generate_series ( (select min(to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone) from $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'TERMA%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'TERMA%') AS dati_staz ON (dd=dati_staz.data) LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale AS igro FROM $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'IGRO%') AS umidita ON (dd=umidita.data) ORDER BY data ASC;";
 }
 else if($id_parametro=='T') {
-	$query = "SELECT dd::timestamp without time zone as data, dati_staz.valore_originale, dati_staz.tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro LIKE '$id_parametro%') , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%') AS dati_staz ON (dd=dati_staz.data) ORDER BY data ASC;";
+	$query = "SELECT dd::timestamp without time zone as data, dati_staz.valore_originale, dati_staz.tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro LIKE '$id_parametro%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%' AND idoperatore=1) AS dati_staz ON (dd=dati_staz.data) ORDER BY data ASC;";
+	//Temperatura MIN:
+	$query_min = "SELECT dd::timestamp without time zone as data, dati_staz.valore_originale, dati_staz.tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro LIKE '$id_parametro%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%' AND idoperatore=2) AS dati_staz ON (dd=dati_staz.data) ORDER BY data ASC;";
+	//Temperatura MAX:
+	$query_max = "SELECT dd::timestamp without time zone as data, dati_staz.valore_originale, dati_staz.tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro LIKE '$id_parametro%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%' AND idoperatore=3) AS dati_staz ON (dd=dati_staz.data) ORDER BY data ASC;";
 	//Riconverto il parametro secondo quelli classici per mantenere le impostazioni sui grafici:
         $id_parametro='TERMA';
 }
 else if($id_parametro=='BARO') {
-	$query = "SELECT dd::timestamp without time zone as data, dati_staz.valore_originale, dati_staz.tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg, zradar_mslp(dati_staz.valore_originale, umidita.igro, temp.terma, staz.quota) FROM  generate_series ( (select min(to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone) from $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'BARO%') , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'BARO%') AS dati_staz ON (dd=dati_staz.data) LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale AS igro FROM $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'IGRO%') AS umidita ON (dd=umidita.data) LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale AS terma FROM $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'TERMA%') AS temp ON (dd=temp.data) LEFT OUTER JOIN (SELECT quota FROM $basetable_from a WHERE a.idstazione = $cod_staz) AS staz ON (dd=temp.data) ORDER BY data ASC;";
+	$query = "SELECT dd::timestamp without time zone as data, dati_staz.valore_originale, dati_staz.tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg, zradar_mslp(dati_staz.valore_originale, umidita.igro, temp.terma, staz.quota) FROM  generate_series ( (select min(to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone) from $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'BARO%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'BARO%') AS dati_staz ON (dd=dati_staz.data) LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale AS igro FROM $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'IGRO%') AS umidita ON (dd=umidita.data) LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale AS terma FROM $realtimetable_from a WHERE a.id_stazione = $cod_staz AND id_parametro like 'TERMA%') AS temp ON (dd=temp.data) LEFT OUTER JOIN (SELECT quota FROM $basetable_from a WHERE a.idstazione = $cod_staz) AS staz ON (dd=temp.data) ORDER BY data ASC;";
 }
 else if($id_parametro=='PA') {
 	$query = "da definire";
@@ -113,48 +118,30 @@ else if($id_parametro=='PA') {
         $id_parametro='BARO';
 }
 else if($id_parametro=='VV' or $id_parametro=='DV') {
-        $query = "SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%') , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%') AS dati_staz ON (dd=data) ORDER BY data ASC;";
+        $query = "SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%') AS dati_staz ON (dd=data) ORDER BY data ASC;";
 	//Riconverto il parametro secondo quelli classici per mantenere le impostazioni sui grafici:
         if ($id_parametro=='VV') $id_parametro='VELV';
 	if ($id_parametro=='DV') $id_parametro='DIRV';
 }
 else if($id_parametro=='ROSE') {
-//$realtimetable_from = 'expo2015.meteo_real_time_lombardia';
-/*
-	$query = <<<EOT
-	SELECT realtime.cardinal2degree(dirv.direction), round((count(velv.*) * 100 / max(dirv.total))) AS big_freq0, round((count(velv1.*) * 100 / max(dirv.total))) AS big_freq1, round((count(velv2.*) * 100 / max(dirv.total))) AS big_freq2, round((count(velv3.*) * 100 / max(dirv.total))) AS big_freq3, max(dirv.total) AS big_total, max(data_agg) as data_agg FROM (
-	SELECT id_stazione, data_e_ora, data_agg, count(*) OVER () AS total, realtime.degree2cardinal(valore_originale) AS direction FROM $realtimetable_from WHERE valore_originale IS NOT NULL AND id_stazione=$cod_staz AND data_e_ora::date = current_date
-	) AS dirv LEFT JOIN (
-	SELECT valore_originale AS speed0, id_stazione, data_e_ora FROM $realtimetable_from WHERE id_sensore=$idsensore AND valore_originale IS NOT NULL AND valore_originale < 0.5 AND data_e_ora::date = current_date
-	) AS velv ON (velv.id_stazione= dirv.id_stazione AND velv.data_e_ora = dirv.data_e_ora) LEFT JOIN (
-	SELECT valore_originale AS speed1, id_stazione, data_e_ora FROM $realtimetable_from WHERE id_sensore=$idsensore AND valore_originale IS NOT NULL AND valore_originale BETWEEN 0.5 AND 5 AND data_e_ora::date = current_date
-	) AS velv1 ON (velv1.id_stazione= dirv.id_stazione AND velv1.data_e_ora = dirv.data_e_ora) LEFT JOIN (
-	SELECT valore_originale AS speed2, id_stazione, data_e_ora FROM $realtimetable_from WHERE id_sensore=$idsensore AND valore_originale IS NOT NULL AND valore_originale BETWEEN 5 AND 10 AND data_e_ora::date = current_date
-	) AS velv2 ON (velv2.id_stazione= dirv.id_stazione AND velv2.data_e_ora = dirv.data_e_ora) LEFT JOIN (
-	SELECT valore_originale AS speed3, id_stazione, data_e_ora FROM $realtimetable_from WHERE id_sensore=$idsensore AND valore_originale IS NOT NULL AND valore_originale > 10 AND data_e_ora::date = current_date
-	) AS velv3 ON (velv3.id_stazione= dirv.id_stazione AND velv3.data_e_ora = dirv.data_e_ora)
-	WHERE dirv.id_stazione = $cod_staz GROUP BY dirv.id_stazione, dirv.direction ORDER BY dirv.id_stazione, realtime.cardinal2degree(dirv.direction);
-EOT;
-*/
-	//PER FAR VEDERE QUALCOSA FINCHE' I DATI NON SONO ALIMENATTI USA QUESTA QUERY CHE PRENDE TUTTI O DATI:
 	$query = <<<EOT
         SELECT realtime.cardinal2degree(dirv.direction), round((count(velv.*) * 100 / max(dirv.total))) AS big_freq0, round((count(velv1.*) * 100 / max(dirv.total))) AS big_freq1, round((count(velv2.*) * 100 / max(dirv.total))) AS big_freq2, round((count(velv3.*) * 100 / max(dirv.total))) AS big_freq3, max(dirv.total) AS big_total, max(data_agg) as data_agg FROM (
-        SELECT id_stazione, data_e_ora, data_agg, count(*) OVER () AS total, realtime.degree2cardinal(valore_originale) AS direction FROM $realtimetable_from WHERE valore_originale IS NOT NULL AND id_stazione=$cod_staz
+        SELECT id_stazione, data_e_ora, data_agg, count(*) OVER () AS total, realtime.degree2cardinal(valore_originale) AS direction FROM $realtimetable_from WHERE valore_originale IS NOT NULL AND id_stazione=$cod_staz AND data_e_ora::date = current_date AND idoperatore=1 AND id_parametro='DV'
         ) AS dirv LEFT JOIN (
-        SELECT valore_originale AS speed0, id_stazione, data_e_ora FROM $realtimetable_from WHERE id_sensore=$idsensore AND valore_originale IS NOT NULL AND valore_originale < 0.5
+        SELECT valore_originale AS speed0, id_stazione, data_e_ora FROM $realtimetable_from WHERE id_sensore=$idsensore AND valore_originale IS NOT NULL AND valore_originale < 0.5 AND idoperatore=1
         ) AS velv ON (velv.id_stazione= dirv.id_stazione AND velv.data_e_ora = dirv.data_e_ora) LEFT JOIN (
-        SELECT valore_originale AS speed1, id_stazione, data_e_ora FROM $realtimetable_from WHERE id_sensore=$idsensore AND valore_originale IS NOT NULL AND valore_originale BETWEEN 0.5 AND 5
+        SELECT valore_originale AS speed1, id_stazione, data_e_ora FROM $realtimetable_from WHERE id_sensore=$idsensore AND valore_originale IS NOT NULL AND valore_originale BETWEEN 0.5 AND 5 AND idoperatore=1
         ) AS velv1 ON (velv1.id_stazione= dirv.id_stazione AND velv1.data_e_ora = dirv.data_e_ora) LEFT JOIN (
-        SELECT valore_originale AS speed2, id_stazione, data_e_ora FROM $realtimetable_from WHERE id_sensore=$idsensore AND valore_originale IS NOT NULL AND valore_originale BETWEEN 5 AND 10
+        SELECT valore_originale AS speed2, id_stazione, data_e_ora FROM $realtimetable_from WHERE id_sensore=$idsensore AND valore_originale IS NOT NULL AND valore_originale BETWEEN 5 AND 10 AND idoperatore=1
         ) AS velv2 ON (velv2.id_stazione= dirv.id_stazione AND velv2.data_e_ora = dirv.data_e_ora) LEFT JOIN (
-        SELECT valore_originale AS speed3, id_stazione, data_e_ora FROM $realtimetable_from WHERE id_sensore=$idsensore AND valore_originale IS NOT NULL AND valore_originale > 10
+        SELECT valore_originale AS speed3, id_stazione, data_e_ora FROM $realtimetable_from WHERE id_sensore=$idsensore AND valore_originale IS NOT NULL AND valore_originale > 10 AND idoperatore=1
         ) AS velv3 ON (velv3.id_stazione= dirv.id_stazione AND velv3.data_e_ora = dirv.data_e_ora)
         WHERE dirv.id_stazione = $cod_staz GROUP BY dirv.id_stazione, dirv.direction ORDER BY dirv.id_stazione, realtime.cardinal2degree(dirv.direction);
 EOT;
 }
 else {
 	//query che crea serie temporale costante passo 10minuti:
-	$query = "SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%') , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%') AS dati_staz ON (dd=data) ORDER BY data ASC;";
+	$query = "SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%') AS dati_staz ON (dd=data) ORDER BY data ASC;";
 }
 
 // Recupero quota e soglie idrometriche per la stazione:
@@ -310,16 +297,26 @@ else {
                 }
 
 		//Nel caso della pioggia faccio un'altra query per recuperare i dati della cumulata:
-		if($id_parametro=='PLUV' || $id_parametro=='NIVO') {
+		if($id_parametro=='PLUV') {
 			$result_cumulata = pg_query($conn,$query_cumulata);
 			while($row_cum = pg_fetch_array($result_cumulata)) {
                  	       $data_array_cum[] = array(strtotime($row_cum[0])*1000, is_null($row_cum[1]) ? null : round(floatval($row_cum[1]),0));
                 	}
 		}
-		if($id_parametro=='NIVO') {
+		/*if($id_parametro=='NIVO') {
                         $result_temp = pg_query($conn,$query_temp);
                         while($row_temp = pg_fetch_array($result_temp)) {
                                $data_array_temp[] = array(strtotime($row_temp[0])*1000, is_null($row_temp[1]) ? null : round(floatval($row_temp[1]),1));
+                        }
+                }*/
+		if($id_parametro=='TERMA') {
+                        $result_temp = pg_query($conn,$query_min);
+                        while($row_temp = pg_fetch_array($result_temp)) {
+                               $data_array_temp[] = array(strtotime($row_temp[0])*1000, is_null($row_temp[1]) ? null : round(floatval($row_temp[1]),1));
+                        }
+			$result_cumulata = pg_query($conn,$query_max);
+                        while($row_cum = pg_fetch_array($result_cumulata)) {
+                               $data_array_cum[] = array(strtotime($row_cum[0])*1000, is_null($row_cum[1]) ? null : round(floatval($row_cum[1]),0));
                         }
                 }
 
@@ -495,8 +492,9 @@ function set_options(id_parametro) {
 	case 'TERMA':
 		plot_title = 'Andamento della temperatura';
 		udm = '°C';
-		soglia2 = 0;
-		soglia3 = 30;
+		suffix_series = '°C'
+		//soglia2 = 0;
+		//soglia3 = 30;
 		markers_on_line = false;
 		series_negativecolor = 'blue';
 		series_color = 'green';
@@ -1092,8 +1090,77 @@ if(id_parametro=='PLUV') {
 	//chart = new Highcharts.Chart(options);	
 }
 
+//Aggiungo la serie di dati sulle temperatura MIn e MAX:
+if(id_parametro=='TERMA') {
+        var chart = $('#container').highcharts();
+        /*chart.yAxis[0].update({
+            max: Math.max(highest_cum, highest, 50)
+        });*/
+
+        var seconda_serie = chart.series[1];
+        seconda_serie.update({
+            name: 'temperatura MAX',
+            //yAxis: 'rainfall-axis',
+            data: graph_data_cum,
+            //step: 'right',
+            type: 'line',
+            color: 'green',
+            //shadow: shadow_line,
+            tooltip: {
+                valueSuffix: '°C'
+            },
+            shadow: false
+            ,showInLegend: true
+        }, false);
+        //seconda_serie.hide();
+        //Aggiungo l'asse per le temperature e relativa serie di dati:
+        /*chart.addAxis({ // Secondary yAxis
+            id: 'temp-axis',
+            //min: 0,
+            title: {
+                text: 'Temperatura [°C]'
+            },
+            lineWidth: 1,
+            lineColor: 'green',
+            opposite: true
+        });*/
+        var terza_serie = chart.series[2];
+	terza_serie.update({
+            name: 'temperatura MIN',
+            //yAxis: 'temp-axis',
+            data: graph_data_temp,
+            type: 'line',
+            tickInterval: 2.0,
+            color: 'orange',
+            shadow: true,
+            threshold: 0,
+            negativeColor: '#6495ED',
+            tooltip: {
+                valueSuffix: '°C'
+            }
+            ,showInLegend: true
+        }, false);
+        //terza_serie.hide();
+
+        //chart.series[1].setData(graph_data_cum,true);
+        chart.tooltip.options.shared = true;
+        chart.tooltip.options.crosshairs = true;
+        chart.tooltip.options.formatter = function() {
+                //return 'h'+Highcharts.dateFormat('%H:%M', this.x) + '  <b> ' + this.y;
+                var s = [];
+            $.each(this.points, function(i, point) {
+                //s.push('<span style="color:'+point.series.color+';font-weight:bold;">'+ point.series.name +': '+
+                s.push('<span style="color:'+point.series.color+';font-weight:bold;">h'+Highcharts.dateFormat('%H:%M ', point.x)+
+                    point.y + this.series.tooltipOptions.valueSuffix + '<span>');
+            });
+            return s.join('<br />');
+        }
+        chart.redraw();
+}
+
+
 //Aggiungo la serie di dati per la validazione dei dati NIVO:
-if(id_parametro=='NIVO') {
+/*if(id_parametro=='NIVO') {
         var chart = $('#container').highcharts();
 	chart.yAxis[0].update({
 	    max: Math.max(highest_cum, highest, 100)
@@ -1143,27 +1210,6 @@ if(id_parametro=='NIVO') {
             ,showInLegend: true
         }, false);
         terza_serie.hide();
-        /*chart.addSeries({
-            name: 'temperatura',
-            yAxis: 'temp-axis',
-            type: 'line',
-	    tickInterval: 2.0,
-            showInLegend: true,
-            data: graph_data_temp,
-            shadow : true,
-	    tooltip: {
-                valueSuffix: '°C'
-            },
-            marker: {
-                symbol: point_symbol,
-                fillColor: marker_fillcolor,
-                lineColor: markerline_color,
-                lineWidth: markerline_width
-            },
-            threshold: series_treshold,
-            color: 'orange'
-            //,negativeColor: 'blue'
-        });*/
 
         //chart.series[1].setData(graph_data_cum,true);
         chart.tooltip.options.shared = true;
@@ -1179,7 +1225,7 @@ if(id_parametro=='NIVO') {
             return s.join('<br />');
         }
         chart.redraw();
-}
+}*/
 
 //Aggiungo la serie di dati per le RAFFICHE DI VENTO:
 /*if(id_parametro=='VELV') {
