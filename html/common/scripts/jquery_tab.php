@@ -135,12 +135,14 @@ if (in_array(3, $composito)) {
     $tab_content .= "<div id='tabs-" . $i . "'><iframe id='myIFrame". $i . "' width='100%' height=".$custom_height." src='" . $link_comp . "?codice_istat=" . $codice_istat . "&progr_punto=" . $progr_punto . "&parametri=" . implode(",", $parametri_array) . "&root_dir_html=" . $root_dir_html ."&sorgente=". $sorgente ."' frameborder='0' allowtransparency='true' seamless='seamless'></iframe>";
     $tab_content .= "</div>";
     $tab_title .= "<li><a href='#tabs-" . $i . "'>" . $tab_name_comp . "</a></li>";
+    $i++;
 }
 
 
 /******* TAB URL LIBERO ********/
 if (in_array(4, $composito)) {
-  //DA SVILUPPARE!!!!
+  //Carico le funzioni dell'URL libero (composito=4) da un file esterno:
+  include('grafici_composito_url.php');
   $i++;
 }
 

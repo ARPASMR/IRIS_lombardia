@@ -512,9 +512,9 @@ WHERE table_name=(SELECT tablename FROM eccoqua) ORDER BY ordinal_position;""".f
 <td class='select' style='text-align:center;'><span class='button-checkbox' id='1'> <button name='select_btn' type='button' class='btn' data-color='info'>Intestazione</button> <input type='checkbox' style='display:none;' class='hidden' unchecked /> </span> </td>
 <td class='highlight' style='text-align:center;'><span class='button-checkbox' id='2'> <button name='hover_btn' type='button' class='btn' data-color='primary'>TABS grafici</button> <input type='checkbox' style='display:none;' class='hidden' unchecked /> </span> </td>
 <td class='visible' style='text-align:center;'><span class='button-checkbox' id='3'> <button type='button' class='btn' data-color='success'>TAB meteogramma</button> <input type='checkbox' style='display:none;' class='hidden' unchecked /> </span> </td> 
-<td class='visible' style='text-align:center;'><span class='button-checkbox' id='4'> <button type='button' class='btn' data-color='warning' disabled>opzione</button> <input type='checkbox' style='display:none;' class='hidden' unchecked /> </span> </td>
+<td class='visible' style='text-align:center;'><span class='button-checkbox' id='4'> <button type='button' class='btn' data-color='warning'>TAB libero</button> <input type='checkbox' style='display:none;' class='hidden' unchecked /> </span> </td>
     </tr></table>"""
-    select_composito += """composito: come comporre la finestra per il layer in esame. Per modificare il comportamento modificare il file jquery_tab.php --> ATTENZIONE! le modifiche su jquery_tab.php riguarderanno tutti i servizi WeGIS<br/>"""
+    select_composito += """composito: come comporre la finestra per il layer in esame. Per modificare il comportamento modificare il file jquery_tab.php --> ATTENZIONE! le modifiche su jquery_tab.php riguarderanno tutti i servizi WeGIS<br/>Per definire invece il "TAB libero" modificare in maniera opportuna grafici_composito_url.php<br/>"""
     if (len(grafici_composito)>0):
       composito_arr = grafici_composito.split(',')
       for comp in composito_arr:
