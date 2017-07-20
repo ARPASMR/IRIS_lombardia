@@ -5,15 +5,15 @@ In base alla variabile sorgente creo il contenuto di questo tab
 */
 
 if ($sorgente=='nd') {
-  $tab_name_comp = 'Composito';
+  $tab_name_extra = 'Composito';
   $tab_content .= "<div id='tabs-" . $i . "'>Campo sorgente-stazioni per tab composito non definita";
   $tab_content .= "</div>";
-  $tab_title .= "<li><a href='#tabs-" . $i . "'>" . $tab_name_comp . "</a></li>";
+  $tab_title .= "<li><a href='#tabs-" . $i . "'>" . $tab_name_extra . "</a></li>";
 }
 
 /* IDROMETRI BIS */
 else if ($sorgente=='idrometri_bis') {
-  $tab_name_comp = 'Elenco prese';
+  $tab_name_extra = 'Elenco prese';
   $tab_content .= "<div id='tabs-" . $i . "'>";
 
   $table_cont = "<table border='1' cellspacing='0' cellpadding='5' id='prese'>";
@@ -41,14 +41,14 @@ else if ($sorgente=='idrometri_bis') {
   $table_cont .= "</table>";
 
   $tab_content .= $table_cont . "</div>";
-  $tab_title .= "<li><a href='#tabs-" . $i . "'>" . $tab_name_comp . "</a></li>";
+  $tab_title .= "<li><a href='#tabs-" . $i . "'>" . $tab_name_extra . "</a></li>";
 }
 
 else {
-  $tab_name_comp = 'Composito';
+  $tab_name_extra = 'Composito';
   $tab_content .= "<div id='tabs-" . $i . "'>Campo sorgente-stazioni per tab composito non definita";
   $tab_content .= "</div>";
-  $tab_title .= "<li><a href='#tabs-" . $i . "'>" . $tab_name_comp . "</a></li>";
+  $tab_title .= "<li><a href='#tabs-" . $i . "'>" . $tab_name_extra . "</a></li>";
 }
 
 

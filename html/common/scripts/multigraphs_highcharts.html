@@ -45,9 +45,6 @@ parametri[index_t] = 'TERMA';
 var sorgente = gup("sorgente"); 
 if (sorgente=='meteoidro_lm' || sorgente=='test_lm') var url_php = root_dir_html + '/common/scripts/extract_dbdata_plot_lombardia.php?';
 else var url_php = root_dir_html + '/common/scripts/extract_dbdata_plot.php?';
-//Definisco url da cui prelevare JSON con i dati da plottare:
-stringa_url = 'params='+parametri+'&root_dir_html='+root_dir_html+'&codice_istat='+codice_istat+'&progr_punto='+progr_punto;
-var JSON_URL_PATH = url_php + stringa_url;
 
 document.write("<link rel='stylesheet' href='" + root_dir_html + "/jQuery/bootstrap-theme.min.css'\/>");
 document.write("<link rel='stylesheet' href='" + root_dir_html + "/jQuery/jquery-ui.css'\/>");
@@ -275,7 +272,9 @@ function syncExtremes(e) {
 // Get the data. The contents of the data file can be viewed at
 // https://github.com/highcharts/highcharts/blob/master/samples/data/activity.json
 //$.getJSON('https://www.highcharts.com/samples/data/jsonp.php?filename=activity.json&callback=?', function (activity) {
-$.getJSON( JSON_URL_PATH, function (activity) {
+//Definisco url da cui prelevare JSON con i dati da plottare:
+stringa_url = 'params='+parametri+'&root_dir_html='+root_dir_html+'&codice_istat='+codice_istat+'&progr_punto='+progr_punto;
+$.getJSON( url_php + stringa_url, function (activity) {
     $.each(activity.datasets, function (i, dataset) {
 
         // Add X values
