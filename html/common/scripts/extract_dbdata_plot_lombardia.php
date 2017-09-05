@@ -23,11 +23,16 @@ else $tipo_json = "multiple_graphs";
 if (isset($_GET['params'])) $params = $_GET['params'];
 else $params = '';
 $params_arr = explode(",", $params);
+//Recupero i sensori della stazione:
+$id_parametro_sensore = explode( '|', $_GET['id_parametro'] );
+$id_parametro = $id_parametro_sensore[0];
+$idsensore = $id_parametro_sensore[1];
+
 
 if (isset($_GET['root_dir_html'])) $root_dir_html = $_GET['root_dir_html'];
 
-$realtimetable_from = 'expo2015.v_meteo_real_time_lombardia';
-$basetable_from = 'expo2015.elencostazionisensori';
+$realtimetable_from = 'realtime.v_meteo_real_time_lombardia';
+$basetable_from = 'dati_di_base.v_anagraficasensori';
 $timezone_data = 'CET';
 //$codice_istat = '006159';
 //$progr_punto_com = '900';
@@ -69,8 +74,9 @@ APPUNTI
 - occorre ovviametne rendere il codice piu' flessibile nel caso in cui si vogliano richiedere piu' o meno sensori
 */
 $pass_time = 60;
-$id_parametro = 'TERMA';
+$id_parametro = 'T';
 $query_temp = "WITH daysago AS (SELECT date_trunc('day', now() at time zone '$timezone_data'-'5 days'::interval) AS dataora) SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg, 'TERMA' AS name, '°C' AS unit, 'line' AS type, 1 AS decimal, false AS step, 40 AS maxy, null AS miny FROM generate_series ( (SELECT dataora FROM daysago) , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_stazione = $codice_istat AND id_parametro = '$id_parametro' AND data >= (SELECT dataora FROM daysago)) AS dati_staz ON (dd=data) ORDER BY data ASC;";
+print $query_temp;
 
 $id_parametro = 'IGRO';
 $query_igro = "WITH daysago AS (SELECT date_trunc('day', now() at time zone '$timezone_data'-'5 days'::interval) AS dataora) SELECT dd::timestamp without time zone as data, umidita.valore_originale, max(umidita.data_agg) OVER () AS data_agg, 'IGRO' AS name, '%' AS unit, 'line' AS type, 0 AS decimal, false AS step, 100 AS maxy, 0 AS miny FROM generate_series ( (SELECT dataora FROM daysago) , now() at time zone '$timezone_data', '$pass_time minute'::interval) dd LEFT OUTER JOIN (SELECT to_timestamp(data || ora, 'YYYY-MM-DDHH24:MI')::timestamp without time zone AS data, valore_originale, data_agg FROM $realtimetable_from a WHERE a.id_stazione = $codice_istat AND id_parametro = '$id_parametro' AND data >= (SELECT dataora FROM daysago)) AS umidita ON (dd=umidita.data) ORDER BY data ASC;";

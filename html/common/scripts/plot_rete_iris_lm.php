@@ -65,6 +65,8 @@ if($id_parametro=='PP') {
 	$query = "SELECT to_char(data_e_ora - '1 minute'::interval,'YYYY-MM-DD HH24:00:00')::timestamp + '1 hour'::interval AS data, sum(valore_originale) AS valore_originale, max(tipologia_validaz), max(data_agg) FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro = '$id_parametro' GROUP BY to_char(data_e_ora - '1 minute'::interval,'YYYY-MM-DD HH24:00:00')::timestamp + '1 hour'::interval ORDER BY data ASC;";
 	//Con questa query invece il passo temporale e' di 1 ora:
 	$query_cumulata = "SELECT data, sum(valore_originale) OVER (ORDER BY data ASC) FROM (SELECT to_char(data_e_ora - '1 minute'::interval,'YYYY-MM-DD HH24:00:00')::timestamp + '1 hour'::interval AS data, sum(valore_originale) AS valore_originale FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro = '$id_parametro' GROUP BY to_char(data_e_ora - '1 minute'::interval,'YYYY-MM-DD HH24:00:00')::timestamp + '1 hour'::interval) AS foo;";
+	//query per prendere la pioggia alla frequenza del sensore:
+	$query_cumulata = "SELECT dd::timestamp without time zone as data, sum(dati_staz.valore_originale) OVER (ORDER BY dd ASC) AS valore_originale, dati_staz.tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro LIKE '$id_parametro%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%') AS dati_staz ON (dd=dati_staz.data) ORDER BY data ASC;";
 	//Riconverto il parametro secondo quelli classici per mantenere le impostazioni sui grafici:
 	$id_parametro='PLUV';
 }
@@ -115,11 +117,13 @@ else if($id_parametro=='BARO') {
 }
 else if($id_parametro=='PA') {
 	$query = "da definire";
+	$query = "SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%' AND idoperatore=1) AS dati_staz ON (dd=data) ORDER BY data ASC;";
 	//Riconverto il parametro secondo quelli classici per mantenere le impostazioni sui grafici:
         $id_parametro='BARO';
 }
 else if($id_parametro=='VV') {
         $query = "SELECT dd::timestamp without time zone as data, valore_originale, tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%' AND idoperatore=1) AS dati_staz ON (dd=data) ORDER BY data ASC;";
+	$query_raffica = "SELECT dd::timestamp without time zone as data, dati_staz.valore_originale, dati_staz.tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro LIKE '$id_parametro%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%' AND idoperatore=3) AS dati_staz ON (dd=dati_staz.data) ORDER BY data ASC;";
 	//Riconverto il parametro secondo quelli classici per mantenere le impostazioni sui grafici:
         $id_parametro='VELV';
 }
@@ -304,6 +308,9 @@ else {
 	                $data_agg = $row[3];
                 }
 
+		/********* FINE BLOCCO LINEA GRAFICO PRINCIPALE **********/
+
+		/********* INIZIO BLOCCCO EVENTUALI LIMEE AGGIUNTIVE AL GRAFICO **********/
 		//Nel caso della pioggia faccio un'altra query per recuperare i dati della cumulata:
 		if($id_parametro=='PLUV') {
 			$result_cumulata = pg_query($conn,$query_cumulata);
@@ -330,10 +337,10 @@ else {
 
 		//Nel caso del vento recupero i dati sulla raffica:
 		if($id_parametro=='VELV') {
-		        $query_raffica = "SELECT dd::timestamp without time zone as data, dati_staz.valore_originale, dati_staz.tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro LIKE '$id_parametro%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%' AND idoperatore=3) AS dati_staz ON (dd=dati_staz.data) ORDER BY data ASC;";
                         $result_raffica = pg_query($conn,$query_raffica);
                         while($row_raf = pg_fetch_array($result_raffica)) {
-                               $data_array_raf[] = array(strtotime($row_raf[0])*1000, round(floatval($row_raf[1]),1));
+                               //$data_array_raf[] = array(strtotime($row_raf[0])*1000, round(floatval($row_raf[1]),1));
+				$data_array_raf[] = array(strtotime($row_raf[0])*1000, is_null($row_raf[1]) ? null : round(floatval($row_raf[1]),0));
                 	}
 		}
 		} //fine dell'else che esclude il caso di atlante piogge
@@ -495,7 +502,7 @@ function set_options(id_parametro) {
 		series_color = 'blue';
 		min_y = lowest;
 		// max_y = highest;
-		max_y = Math.max.apply( Math, $.map(graph_data_mslp, function(o){ return o[1]; }) );
+		//max_y = Math.max.apply( Math, $.map(graph_data_mslp, function(o){ return o[1]; }) );
 		break;
 	case 'TERMA':
 		plot_title = 'Andamento della temperatura';
@@ -1046,10 +1053,11 @@ if(id_parametro=='PLUV') {
 
 	var chart = $('#container').highcharts();
 
+	var maxY = Math.max(highest_cum, 50);
 	chart.addAxis({ // Secondary yAxis
             id: 'rainfall-axis',
 	    min: 0,
-	    max: Math.max(highest_cum, 50), //NON RIESCO A FARGLI PRENDERE IL VALORE MAX SULLE Y....
+	    max: maxY, //NON RIESCO A FARGLI PRENDERE IL VALORE MAX SULLE Y....
             title: {
                 text: 'Pioggia cumulata [mm]'
             },

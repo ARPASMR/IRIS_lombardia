@@ -500,5 +500,3 @@ OpenLayers.Strategy.AttributeCluster = OpenLayers.Class(OpenLayers.Strategy.Clus
     CLASS_NAME: "OpenLayers.Strategy.AttributeCluster"
 });
 
-
-

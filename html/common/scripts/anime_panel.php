@@ -9,6 +9,7 @@
 * Created:     01/04/2016
 * Licence:     EUPL 1.1 Arpa Piemonte 2016
 ***************************************************************/
+//Changed by Vargiu 21/08/2017
 
 /*
 Testiamo una finestra per gestire le animazioni di alcuni layer sulla mappa.
@@ -170,12 +171,24 @@ var last15min = new Date(currentTimeUTC.getTime()); //recupero l'ultimo disponib
 var last3h_string = get_dateString(last3h); //recupero il primo ellipse di 3 ore fa
 var lastStorm_string = get_dateString(last15min); //recupero l'ultimo ellipse disponibile
 
-var interval = 1.125; //numero di secondi tra unanimazionwe e laltra..ma dove viene definito normalmente?
+//var interval = 1.125; //numero di secondi tra unanimazionwe e laltra..ma dove viene definito normalmente?
+
+// Vargiu: modifico il refresh dell'immagini per avere una maggiore fluidita'.
+var interval = 0.3; //numero di secondi tra unanimazionwe e laltra..ma dove viene definito normalmente?
 var parent_w = window.parent;
 //var test = parent_w.document.getElementById('ore');
 
 //Proviamo ad importare su javascript il mega array creato in php con tutti i dati sui layer animabili:
-var data_table = <?php echo json_encode($data_table); ?>;
+var data_table  = <?php echo json_encode($data_table); ?>;
+
+//Vargiu 21/08/2017 Definisco le variabili animeGid e animeLabel per individuare velocemente il nome dell'animazione
+
+var animeGid = data_table[0];
+var animeLabel = data_table[animeGid]["label"]; 
+console.log("Test variables animeGid and animeLabel: " + animeGid + ", " + animeLabel);
+
+//fine Vargiu 21/08/2017
+
 
 /* SEZIONE FUNZIONI DI ANIMAZIONE */
 // Associo adesso lanimazione di ELLIPSE_3h e dei fulmini:
@@ -227,8 +240,14 @@ console.log("visibilita ellipse: "+parent_w.ellipse_24h.getVisibility());
 }
 var geop_checked=false;
 function attiva_geop(checkbox_value, d) {
+   
+  // Vargiu 21/08/2017. Salto questa funzione per animazione meteoswiss perche' non ci sono layer di geop 
+  if (animeLabel == "meteoswiss") return;
+   
   nome_check = checkbox_value.value;
+   
   if ( $('#'+nome_check).is(':checked') ) {
+
     parent_w.map.addLayer(parent_w.hg700);
     //Filtro gia' i dati per non impiantare il sistema:
     var dataoraEsatta = new Date(d.getTime()); //prendo la data esatta
@@ -245,6 +264,8 @@ function attiva_geop(checkbox_value, d) {
   }
 }
 function anime_storm(d) {
+    //Vargiu 21/08/2017 Salto questi setting perche' non ci sono questi layer
+    if (animeLabel == 'meteoswiss') return false;
     //Disattivo la animazione dei temporali e fulmini nel caso di animazione dei modelli:
     if (raster_label.indexOf("COSMO")>=0) {
 	var dataoraEsatta = new Date(d.getTime()); //prendo la data esatta
@@ -392,15 +413,24 @@ function extract_string_time(last_time_rounded, formato_data) {
         seconds = (second < 10) ? "0" + second : second;
 	//alert(days + '-'+months+'-'+year+ ' '+hours+':'+minutes+':'+seconds);
 	switch (formato_data) {
-	  case 'HH:MI':
-	    return hours+':'+minutes;
-	    break;
-	  case 'HH':
+          case 'HH:MI':
+            return hours+':'+minutes;
+            break;
+          case 'HHMI':
+            return hours+''+minutes;
+            break;
+          case 'HH':
             return hours;
             break;
-	  case 'YYYYMMDDYYHH':
+          case 'YYYYMMDDYYHH':
             return ""+year+months+days+hours;
             break;
+          case 'YYYYMMDDHHMI':
+            return ""+year+months+days+hours+''+minutes;
+            break;
+          default:
+            console.log("ATTENZIONE! Corrispondenza non trovata tra formato data definito su DB e quello su codice");
+            return "99";
 	}
 }
 
@@ -459,6 +489,7 @@ function set_contatore() {
 	max_spanRaster = convert_incremento_to_seconds(delta_max, udm);
 	//maxDateRaster = new Date(today.getTime() - (max_spanRaster * 1000)); //tempo massimo dal quale partire nel passato
 	maxDateRaster = new Date(today_UTC_time - (max_spanRaster * 1000));
+        
 
 	//Ripulisco la mappa dall'ultima immagine se c'e':
         if (anime_rain) {parent_w.map.removeLayer(anime_rain);}
@@ -658,7 +689,8 @@ function stopAnimationRaster(reset) {
     }
     else {
     //Resetto e visualizzo tutti i temporali e i fulmini:
-    if (webgis != 'rischioindustriale') {
+    //Vargiu 21/08/2017 Aggiunto il controllo su animeLabel per saltare questo if
+    if (webgis != 'rischioindustriale' && animeLabel != 'meteoswiss') {
         parent_w.filterStorm24.lowerBoundary = last3h_string;
         parent_w.filterStorm24.upperBoundary = lastStorm_string;
         parent_w.filterStrategyStorm24.setFilter(parent_w.filterStorm24);
@@ -684,7 +716,9 @@ function pauseAnimationRaster() {
 }
 //In questo modo setto come layer di default il mosaico piemontese istantaneo che ha gid=3 sul DB:
 function set_deafult_layer() {
-	var default_raster = '<?php echo $default_raster; ?>'
+	//var default_raster = '<?php echo $default_raster; ?>' //Vargiu 18/08/2017
+	//var default_raster = '24';
+	var default_raster = animeGid.toString();
 	$("#layer_choice option[value="+default_raster+"]").prop("selected", true);
 	set_raster_url(default_raster);
 }
@@ -729,14 +763,14 @@ if ($webgis != 'rischioindustriale') {
 ?>
 <fieldset>
  <legend>Associare con:</legend>
- <input type="checkbox" name="temporali" id='temporali' value="temporali" onChange='attiva_temporali(this, d);' /> temporali
+ <input type="checkbox" name="temporali" id='temporali' value="temporali" onChange='attiva_temporali(this, d);' disabled/> temporali
  <br /> 
- <input type="checkbox" name="fulmini" id='fulmini' value="fulmini" onChange='attiva_fulmini(this, d);' /> fulmini
+ <input type="checkbox" name="fulmini" id='fulmini' value="fulmini" onChange='attiva_fulmini(this, d);' disabled/> fulmini
  <br />
- <input type="checkbox" name="geopotenziale" id='geopotenziale' value="geopotenziale" onChange='attiva_geop(this, d);' /> geopotenziale
+ <input type="checkbox" name="geopotenziale" id='geopotenziale' value="geopotenziale" onChange='attiva_geop(this, d);' disabled/> geopotenziale
 </fieldset>
 <?php
-}
+}//Vargiu 21/08/2017. Al precedente "checkbox" aggiunta l'opzione "disabled" per disabilitare i layer (ora mancanti) ed evitare errori. id size cambiato da 10 a 11
 ?>
 
 <p>
@@ -745,7 +779,7 @@ if ($webgis != 'rischioindustriale') {
 --><button style='vertical-align:middle;' disabled id='pause' onclick="pauseAnimationRaster()" title="pausa l'animazione"><img src="<?php echo $root_dir_html; ?>/common/icons/toolbar_icons/pausa-dav.png" align="middle" alt="pause" border=0 vspace=1 hspace=0 width=16> </button><!--
 --><button style='vertical-align:middle;' disabled id='stop' onclick="stopAnimationRaster()" title="ferma l'animazione"><img src="<?php echo $root_dir_html; ?>/common/icons/toolbar_icons/stop-dav.png" align="middle" alt="stop" border=0 vspace=1 hspace=0 width=16> </button><!--
 --><button style='vertical-align:middle;' disabled id='next' onclick="nextAnimationRaster()" title="successivo"><img src="<?php echo $root_dir_html; ?>/common/icons/toolbar_icons/fast_forward-26.png" align="middle" alt="successivo" border=0 vspace=1 hspace=0 width=16> </button><!--
---><input style='vertical-align:middle;text-align:center;' type="text" size=10 id="timing" title="UTC" disabled >
+--><input style='vertical-align:middle;text-align:center;' type="text" size=11 id="timing" title="UTC" disabled >
 </p>
 
 </center>

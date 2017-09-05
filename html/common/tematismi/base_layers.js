@@ -27,6 +27,7 @@ var default_layer_name = "Nuovo layer";
         var gtop = new OpenLayers.Layer.Google("Google Topography",{type: G_PHYSICAL_MAP, sphericalMercator: true});
 	*/
 
+
 	//New GoogleMap Layers V3:
 	var gsat = new OpenLayers.Layer.Google("Google Satellite",
 		{type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 22}
@@ -34,6 +35,22 @@ var default_layer_name = "Nuovo layer";
 	var gter = new OpenLayers.Layer.Google("Google Rilievo",
                 {type: google.maps.MapTypeId.TERRAIN, numZoomLevels: 16}
         );
+        
+
+         
+        // Vargiu.  Per modificare gli stili di oggetti Google maps (road, label etc) 
+        //          probabilmente si deve intervenire in common/scripts/geoext_general_produzione.js:95 
+        //          sfruttando qualche strategia del tipo: 
+        //                 mapPanel.mmap.addLayers([gter]);
+        //                 gter.mapObject.setOptions({"styles": my_style});
+        //
+        //          Dove my_stile e' un opportuno oggetto googlemap (vedi esempio in common/scripts/geoext_general_produzione.js  "style_off") 
+        //
+        //          Poiche' i "layers di base" sono caricati dal DB ed incapsulati in mapPanel,      
+        //          si dovrebbe accedere alle options di gter come:
+        //          mapPanel.layers.map.layers[6].mapObject.setOptions({"styles": my_style});
+        //
+        
 
         var osmLayer = new OpenLayers.Layer.OSM("OpenStreetMap");
 	//var osmCycle = new OpenLayers.Layer.OSM.CycleMap("OpenCycleMap");
@@ -134,6 +151,13 @@ var wms_lombardia_ortofoto = new OpenLayers.Layer.WMS('Ortofoto Agea 2015 - Reg.
         {layers: "ortofoto2015UTM32N", format: "image/png", transparent: "false", version:'1.3.0', styles:'', srs:OL_32632},
         {isBaseLayer: true, projection: OL_3857}
 );
+
+var wms_lombardia_dtm20 = new OpenLayers.Layer.WMS('DTM Modello Digitale del Terreno - Reg.Lombardia',
+  "http://www.cartografia.servizirl.it/arcgis/services/wms/dtm20_utm_wms/MapServer/WMSServer",
+        {layers: "0", format: "image/png", transparent: "false", version:'1.3.0', styles:'', srs:OL_32632},
+        {isBaseLayer: true, projection: OL_3857}
+);
+
 
 //NUOVI SERVIZI REGIONE:
 var wms_regione_bn =  new OpenLayers.Layer.WMS("WMS Regione BN", "http://geomap.reteunitaria.piemonte.it/ws/taims/rp-01/taimsbasewms/wms_sfondo_cart_rif_bn?",

@@ -233,7 +233,7 @@ console.log("lat="+lat_rast+" e lon="+lon_rast); //in realta sono utm 900913
 	E vedere come questo controllo compaia tante volte.
  	mapPanel.map.addControl(new OpenLayers.Control.Navigation(
 		//Ma tutto questo non serve a un cazzo perche' zoomma come minchia vuole
-		{zoomWheelEnabled: true, mouseWheelOptions: {cumulative: false, interval: 50, maxDelta: 2}}
+		{zoomWheelEnabled: true, mouseWheelOptions: {cumulative: false, interval: 100, maxDelta: 4}}
 	)); //allows the user pan ability and mouseWheel
 	*/
 
@@ -277,6 +277,23 @@ var position = map.getLonLatFromPixel(e.xy);
    markerslayer.addMarker(new OpenLayers.Marker(position,icon));
 });
 */
+
+
+// Vargiu 24/08/2017. Styles to switch off the roads in Google maps object
+ 
+                 var style_off = [{
+                 "featureType" : "road",
+                 "stylers" : [{
+                             "visibility" : "off"
+                              }]
+                                 }];
+
+
+                console.log("Test visibility off for roads in google maps Terrain");
+
+                //todo: set an if clausole to catch the layer "Google Rilievo"
+                mapPanel.layers.map.layers[6].mapObject.setOptions({"styles": style_off});
+ 
 
 ///////////////// END OF MAP PANEL //////////////////////////////
 

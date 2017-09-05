@@ -73,19 +73,154 @@ var columns_bacini_tiny = new Ext.grid.ColumnModel({
         sortable: true
     },
 	columns: [
-		{header: "Id bacino", dataIndex: "gid"},
 		{header: "<b>Nome</b>", dataIndex: "bacini_agg", width: 180},
 		{header: "Area [km2]", dataIndex: "area", decimalPrecision: 3, align: "center"}
 	]
 });
 
+
+/*LIMITI COMUNALI*/
+var style_lim_comunali_tiny = new OpenLayers.Style();
+/*var bacini_rule = new OpenLayers.Rule({
+	title: "Bacini Lombardia",
+	symbolizer: {strokeColor: "black", strokeWidth: 0.8, strokeOpacity: 0.5, fillColor: "#0b9d3c", fillOpacity: 0.3
+	,title: "${bacini_agg}", fontSize: "0px"
+        ,label: "${bacini_agg}", labelAlign: "ct", fontWeight: "bold", fontFamily: "sans-serif", labelYOffset: -10
+	}
+});*/
+var style_lim_comunali_tiny = new OpenLayers.Style({
+        strokeColor: "black", strokeWidth: 0.8, fillOpacity: 0.5, fillColor: "#e0f0f0", fillOpacity: 0.3
+        ,title: "${nome_com}"
+        ,label: "${nome_com}", labelAlign: "ct", fontWeight: "bold", fontFamily: "sans-serif", labelYOffset: -10
+        }, {
+        rules: [
+	        new OpenLayers.Rule({
+                title: "Limiti comunali",
+                minScaleDenominator: 250000,
+                symbolizer: {fontSize: "0px", strokeWidth:0.6}
+        }),
+        new OpenLayers.Rule({
+                title: "Limiti comunali",
+                maxScaleDenominator: 250000,
+                symbolizer: {
+                        fontSize: "0px"
+                }
+        })
+]});
+//style_bacini_tiny.addRules([bacini_rule]);
+var styleMap_lim_comunali_tiny = new OpenLayers.StyleMap({
+	"default": style_lim_comunali_tiny
+	, "temporary": new OpenLayers.Style({strokeWidth:4, strokeOpacity:1, fillOpacity: 0.4, cursor: "pointer", fontSize: 0})
+});
+var lim_comunali_tiny = new OpenLayers.Layer.Vector(default_layer_name, {
+	styleMap: styleMap_lim_comunali_tiny,
+	strategies: [new OpenLayers.Strategy.Fixed()],
+	projection: OL_3003,
+	protocol: new OpenLayers.Protocol.WFS({
+		url: url_tinyows, featureType: "limiti_comunali",
+		featureNS: "http://www.tinyows.org/",
+		srsName: "epsg:3003",
+		geometryName: "the_geom"
+	})
+});
+lim_comunali_tiny.setVisibility(false);
+store_lim_comunali_tiny = new GeoExt.data.FeatureStore({
+	fields: [
+		{name: "gid", type: "integer"},
+		{name: "nome_com", type: "string"},
+	],
+	layer: lim_comunali_tiny
+});
+store_lim_comunali_tiny.on('load', function(store){
+      store.sort('id', 'ASC');
+});
+/*var columns_lim_comunali_tiny = new Ext.grid.ColumnModel({
+    defaults: {
+        sortable: true
+    },
+	columns: [
+		{header: "Id bacino", dataIndex: "gid"},
+		{header: "<b>Nome</b>", dataIndex: "bacini_agg", width: 180},
+		{header: "Area [km2]", dataIndex: "area", decimalPrecision: 3, align: "center"}
+	]
+});*/
+
+/*LIMITI PROVINCIALI*/
+var style_lim_provinciali_tiny = new OpenLayers.Style();
+/*var bacini_rule = new OpenLayers.Rule({
+	title: "Bacini Lombardia",
+	symbolizer: {strokeColor: "black", strokeWidth: 0.8, strokeOpacity: 0.5, fillColor: "#0b9d3c", fillOpacity: 0.3
+	,title: "${bacini_agg}", fontSize: "0px"
+        ,label: "${bacini_agg}", labelAlign: "ct", fontWeight: "bold", fontFamily: "sans-serif", labelYOffset: -10
+	}
+});*/
+var style_lim_provinciali_tiny = new OpenLayers.Style({
+        strokeColor: "red", strokeWidth: 0.8, fillOpacity: 0.5, fillColor: "#e0f0f0", fillOpacity: 0.3
+        ,title: "${nome}"
+        ,label: "${nome}", labelAlign: "ct", fontWeight: "bold", fontFamily: "sans-serif", labelYOffset: -10
+        }, {
+        rules: [
+	        new OpenLayers.Rule({
+                title: "Limiti provinciali",
+                minScaleDenominator: 250000,
+                symbolizer: {fontSize: "0px", strokeWidth:0.6}
+        }),
+        new OpenLayers.Rule({
+                title: "Limiti provinciali",
+                maxScaleDenominator: 250000,
+                symbolizer: {
+                        fontSize: "0px"
+                }
+        })
+]});
+//style_bacini_tiny.addRules([bacini_rule]);
+var styleMap_lim_provinciali_tiny = new OpenLayers.StyleMap({
+	"default": style_lim_provinciali_tiny
+	, "temporary": new OpenLayers.Style({strokeWidth:4, strokeOpacity:1, fillOpacity: 0.4, cursor: "pointer", fontSize: 0})
+});
+var lim_provinciali_tiny = new OpenLayers.Layer.Vector(default_layer_name, {
+	styleMap: styleMap_lim_provinciali_tiny,
+	strategies: [new OpenLayers.Strategy.Fixed()],
+	projection: OL_32632,
+	protocol: new OpenLayers.Protocol.WFS({
+		url: url_tinyows, featureType: "limiti_provinciali",
+		featureNS: "http://www.tinyows.org/",
+		srsName: "epsg:32632",
+		geometryName: "the_geom"
+	})
+});
+lim_provinciali_tiny.setVisibility(false);
+store_lim_provinciali_tiny = new GeoExt.data.FeatureStore({
+	fields: [
+		{name: "gid", type: "integer"},
+		{name: "nome", type: "string"},
+		/*{name: "sigla", type: "string"}*/
+	],
+	layer: lim_provinciali_tiny
+});
+store_lim_provinciali_tiny.on('load', function(store){
+      store.sort('id', 'ASC');
+});
+
+/*var columns_lim_provinciali_tiny = new Ext.grid.ColumnModel({
+    defaults: {
+        sortable: true
+    },
+	columns: [
+		{header: "Id bacino", dataIndex: "gid"},
+		{header: "<b>Nome</b>", dataIndex: "bacini_agg", width: 180},
+		{header: "Area [km2]", dataIndex: "area", decimalPrecision: 3, align: "center"}
+	]
+});*/
+
 /*STAZIONI IDRONIVOMETEO*/
 var style_staz = new OpenLayers.Style({
-        pointRadius: 5, strokeColor: "black", strokeWidth: 0.4, fillOpacity: 0.3//, strokeOpacity: 0.5, fillOpacity: 0.3, fillColor: "gray"
+        pointRadius: 7, strokeColor: "black", strokeWidth: 0.4, fillOpacity: 0.9, strokeOpacity: 0.5, fillColor: "red"
         ,title: "${denominazione}"
         ,label: "${denominazione}", labelAlign: "ct", fontWeight: "bold", fontFamily: "sans-serif", labelYOffset: -10
         }, {
         rules: [
+/*
         new OpenLayers.Rule({
                 title: "Idrometrica",
                 filter: new OpenLayers.Filter.Comparison({
@@ -118,6 +253,7 @@ var style_staz = new OpenLayers.Style({
                 })
                 ,symbolizer: {graphicName: "square", pointRadius: 5, strokeWidth:0.5, fillColor: "orange"}
         }),
+*/
         new OpenLayers.Rule({
                 title: " ",
                 minScaleDenominator: 250000,
@@ -181,13 +317,14 @@ var columns_staz_lm = new Ext.grid.ColumnModel({
 
 
 
-/*STAZIONI IDRONIVOMETEO ARPA LOMBARDIA*/
-var style_stazarpa = new OpenLayers.Style({
-        pointRadius: 5, strokeColor: "black", strokeWidth: 0.4, fillOpacity: 0.3//, strokeOpacity: 0.5, fillOpacity: 0.3, fillColor: "gray"
+/*STAZIONI IDRONIVOMETEO NON di ARPA LOMBARDIA*/
+var style_stazaltri = new OpenLayers.Style({
+        pointRadius: 7, strokeColor: "black", strokeWidth: 0.4, fillOpacity: 0.9, strokeOpacity: 0.5,  fillColor: "gray"
         ,title: "${denominazione}"
         ,label: "${denominazione}", labelAlign: "ct", fontWeight: "bold", fontFamily: "sans-serif", labelYOffset: -10
         }, {
         rules: [
+/*
         new OpenLayers.Rule({
                 title: "Idrometrica",
                 filter: new OpenLayers.Filter.Comparison({
@@ -220,6 +357,7 @@ var style_stazarpa = new OpenLayers.Style({
                 })
                 ,symbolizer: {graphicName: "square", pointRadius: 5, strokeWidth:0.5, fillColor: "orange"}
         }),
+*/
         new OpenLayers.Rule({
                 title: " ",
                 minScaleDenominator: 250000,
@@ -233,24 +371,24 @@ var style_stazarpa = new OpenLayers.Style({
                 }
         })
 ]});
-var styleMap_stazarpa = new OpenLayers.StyleMap({
-        "default": style_stazarpa,
+var styleMap_stazaltri = new OpenLayers.StyleMap({
+        "default": style_stazaltri,
         "select": new OpenLayers.Style({pointRadius: 8, fillColor: "blue", fillOpacity: 0.8})
         ,"temporary": new OpenLayers.Style({pointRadius: 8, fontSize: 13, cursor: "pointer"})
 });
-var stazarpa = new OpenLayers.Layer.Vector(default_layer_name, {
-        styleMap: styleMap_stazarpa,
+var stazaltri = new OpenLayers.Layer.Vector(default_layer_name, {
+        styleMap: styleMap_stazaltri,
         strategies: [new OpenLayers.Strategy.BBOX()
         ],
         projection: OL_32632,
         protocol: new OpenLayers.Protocol.WFS({
-                url: url_tinyows, featureType: "v_anagraficasensoriarpa",
+                url: url_tinyows, featureType: "v_anagraficasensorialtri",
                 featureNS: "http://www.tinyows.org/",
                 srsName: "epsg:32632", geometryName: "the_geom"
         })
 });
-stazarpa.setVisibility(false);
-store_stazarpa_lm = new GeoExt.data.FeatureStore({
+stazaltri.setVisibility(false);
+store_stazaltri_lm = new GeoExt.data.FeatureStore({
 	fields: [
 	{name: "idstazione", type: "string"},
 		{name: "denominazione", type: "string"},
@@ -260,13 +398,13 @@ store_stazarpa_lm = new GeoExt.data.FeatureStore({
 		{name: "nometipologie", type: "string"},
 		{name: "idsensori", type: "string"}
 	],
-	layer: stazarpa
+	layer: stazaltri
 	,autoLoad: true
 });
-store_stazarpa_lm.on('load', function(store){
+store_stazaltri_lm.on('load', function(store){
         store.sort('denominazione', 'ASC');
 });
-var columns_stazarpa_lm = new Ext.grid.ColumnModel({
+var columns_stazaltri_lm = new Ext.grid.ColumnModel({
     defaults: {
         sortable: true
     },

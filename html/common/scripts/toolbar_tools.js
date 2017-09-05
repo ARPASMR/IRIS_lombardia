@@ -8,6 +8,7 @@
 * Created:     01/04/2016
 * Licence:     EUPL 1.1 Arpa Piemonte 2016
 ***************************************************************/
+//Changed by Vargiu on 21/08/2017
 
 //inizializzo alcune variabili che serviranno anche in altri script:
 var ctrl, toolbarItems = [], action, actions = {}, area, misura_lunghezza, misura_area, misura_heading;
@@ -650,6 +651,13 @@ function get_active_layer() {
 		}
 	} //fine del ciclo for
 }
+
+/* Vargiu 21/08/2017. Utilizzo la variabile restore_old_layer per saltare alcune parti di codice che creano problemi nelle animazioni radar.
+Il comportamento originario e' ottenuto lasciando restore_old_layer = true. Il primo errore che si presenta (variabile hg700), determina restore_old_layer = false. 
+*/      
+
+var restore_old_layer = true;
+
 //Rimuovo il layer d'animazione alla chiusura della finestra o lo riattivo alla riapertura:
 function remove_anime_layer(visibility) {
 	for (var i=0; i < mapPanel.map.layers.length; i++) {
@@ -669,8 +677,20 @@ function remove_anime_layer(visibility) {
            }
 	   restore_closed_raster = []; //resetto l'array dei layer da riattivare
 	}
+
+      //Vargiu 21/08/2017. Gestisco l'errore su hg700 col try: 
+      try {
 	//In ogni caso spengo il layer sui livelli geopotenziali:
 	hg700.setVisibility(false);
+        }
+
+      catch(e)  {
+        restore_old_layer = false;
+        }
+       //end try
+
+      //Vargiu 21/08/2017. Salto anche questi setting poiche' alcune variabili non sono definite
+      if (restore_old_layer){
 	//Resetto e visualizzo tutti i temporali e i fulmini:
 	if (webgis != 'rischioindustriale') {
 		filterStorm.lowerBoundary = last3h_string;
@@ -689,6 +709,7 @@ function remove_anime_layer(visibility) {
 	refreshStrategy.activate();
 	refreshStrategy.refresh();
 	ellipse.refresh({ force: true });
+     } //end if restore_old_layer
 }
 function anime_panel() {
 //spengo i layer-raster accesi e ne recupero i nomi per ripristinarli successivamente alla chiusura del pannello:

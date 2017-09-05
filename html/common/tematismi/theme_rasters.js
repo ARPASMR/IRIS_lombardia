@@ -45,6 +45,18 @@ var size10 = new OpenLayers.Size(255, 266);
 var bounds11 = new OpenLayers.Bounds(596067.998, 5124377.804, 1932542.348, 6326810.479);
 var size11 = new OpenLayers.Size(1017, 915);
 
+//Per immagini METEOSWISS - prova per la Lombardia:
+var bounds_meteoswiss = new OpenLayers.Bounds(299385, 5406475, 1387223, 6354697);
+var size_meteoswiss = new OpenLayers.Size(710, 640);
+url_raster_meteoswiss = root_dir_html+"/common/DATA/raster/meteoswiss/";
+var meteoswiss = new OpenLayers.Layer.Image(default_layer_name,
+      url_raster_meteoswiss + "meteoswiss.radar.precip.png?rand="+d.getTime(),
+      bounds_meteoswiss, size_meteoswiss,
+      {isBaseLayer: false, alwaysInRange: true, opacity: 1}
+);
+meteoswiss.setVisibility(false);
+meteoswiss.redraw(true);
+
 //Per le immagini di monitoraggio NIVO:
 url_raster_nivo = root_dir_html+"/common/DATA/nivo/";
 var bounds9 = new OpenLayers.Bounds(724108.892, 5424880.111, 1055101.249, 5885144.160);
