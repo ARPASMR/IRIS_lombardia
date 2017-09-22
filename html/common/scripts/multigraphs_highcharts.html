@@ -43,7 +43,7 @@ parametri = param_str.split(",");
 var index_t = parametri.indexOf('DEW'); //nel caso vi sia DEW lo sostituisco con TERMA
 parametri[index_t] = 'TERMA';
 var sorgente = gup("sorgente"); 
-if (sorgente=='meteoidro_lm' || sorgente=='test_lm') var url_php = root_dir_html + '/common/scripts/extract_dbdata_plot_lombardia.php?';
+if (sorgente=='meteoidro_lm' || sorgente=='test_lm') var url_php = root_dir_html + '/common/scripts/extract_dbdata_plot_iris_lm.php?';
 else var url_php = root_dir_html + '/common/scripts/extract_dbdata_plot.php?';
 
 document.write("<link rel='stylesheet' href='" + root_dir_html + "/jQuery/bootstrap-theme.min.css'\/>");

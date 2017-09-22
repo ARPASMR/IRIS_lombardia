@@ -126,6 +126,7 @@ else {
 	var zoomSelector_hidden = true;
 	var tickets_hidden = true;
 	var split_link_hidden = true;
+	var multiselect_hidden = true;
 EOT;
 	$tools_def .= "</script>";
 	echo $tools_def;

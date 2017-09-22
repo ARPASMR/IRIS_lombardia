@@ -231,11 +231,12 @@ console.log("lat="+lat_rast+" e lon="+lon_rast); //in realta sono utm 900913
         /* L'unico modo per ovviare al fatto che la mappa zoomma tantissimo e' commentare questo nuovo Control.Navigation, poiche' a quanto pare ce ne sono 3 caricati sulla mappa. Basta digitare dalla console javascript:
 	map.getControlsByClass("OpenLayers.Control.Navigation");
 	E vedere come questo controllo compaia tante volte.
- 	mapPanel.map.addControl(new OpenLayers.Control.Navigation(
-		//Ma tutto questo non serve a un cazzo perche' zoomma come minchia vuole
-		{zoomWheelEnabled: true, mouseWheelOptions: {cumulative: false, interval: 100, maxDelta: 4}}
-	)); //allows the user pan ability and mouseWheel
 	*/
+ 	/*mapPanel.map.addControl(new OpenLayers.Control.Navigation(
+		//Ma tutto questo non serve a un cazzo perche' zoomma come minchia vuole
+	        {zoomWheelEnabled: true, mouseWheelOptions: {cumulative: false, interval: 100, maxDelta: 4}}
+	        //{zoomWheelEnabled: false }
+	)); //allows the user pan ability and mouseWheel*/
 
 	mapPanel.map.addControl(new OpenLayers.Control.MousePosition());
 	mapPanel.map.addControl(new OpenLayers.Control.KeyboardDefaults()); //ZoomBox pressing SHIFT.

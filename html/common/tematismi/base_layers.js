@@ -33,7 +33,7 @@ var default_layer_name = "Nuovo layer";
 		{type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 22}
 	);
 	var gter = new OpenLayers.Layer.Google("Google Rilievo",
-                {type: google.maps.MapTypeId.TERRAIN, numZoomLevels: 16}
+                {type: google.maps.MapTypeId.TERRAIN, numZoomLevels: 22}
         );
         
 

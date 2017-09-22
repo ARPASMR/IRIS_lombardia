@@ -31,6 +31,7 @@ legend = new GeoExt.LegendPanel({
 	,xtype: "gx_legendpanel"
 	,defaults: {
         //style: 'padding:5px',
+        //autoShow : true,
         baseParams: {
             FORMAT: 'image/png',
             LEGEND_OPTIONS: 'forceLabels:on'

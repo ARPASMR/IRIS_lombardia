@@ -50,7 +50,6 @@ else {
                 ,displayProjection: OL_4326
                 ,allOverlays: false //e' un opzione di GeoExt messa a false, ma non ho ben capito a cosa serva...
                 , theme: null //per non far ricaricare ad Openlayers lo style.css
-
         };
 } //Fine dell'ELSE se BASE_LAYERS=ZERO
 
@@ -69,8 +68,8 @@ function toolbar_tools_default() {
         {
         clickout: true, toggle: false,
         multiple: false, hover: false,
-        toggleKey: "ctrlKey", // ctrl key removes from selection
-        multipleKey: "shiftKey" // shift key adds to selection
+        //toggleKey: "ctrlKey", // ctrl key removes from selection
+        //multipleKey: "shiftKey" // shift key adds to selection
 		//,box: true
 		//,hover: true //praticamente e' un TOOLTIP!!!!!!!!!!!!
         }
@@ -261,31 +260,40 @@ toolbarItems.push(new Ext.Toolbar.Spacer({width:10}));
 ///////////// CONTROL TOOLS ////////////
 
         // SelectFeature control, a "toggle" control
-        select_control = new GeoExt.Action({
+        multiselect_control = new GeoExt.Action({
                 text: "",
                 control: new OpenLayers.Control.SelectFeature(
                         layers_to_select,
                                 {
                                 clickout: true, toggle: false,
-                                multiple: false, hover: false
-                                //toggleKey: "ctrlKey", // ctrl key removes from selection
-                                //multipleKey: "shiftKey" // shift key adds to selection
+                                multiple: false, hover: false,
+				box: true,
+                                toggleKey: "ctrlKey", // ctrl key removes from selection
+                                multipleKey: "shiftKey" // shift key adds to selection
                                 }
                 ),
+		//devo creare un handler per riattivare la selezione normale:
+		handler: function(e) {
+                        ispressed=e.pressed;
+                        if (ispressed==true) selectCtrl.deactivate();
+                        else selectCtrl.activate();
+                        //console.log(e.pressed);
+                },
                 //control: selectCtrl,
-                map: map, pressed: true,
+                map: map, pressed: false,
                 // button options:
                 toggleGroup: "controls", //group: "controls",
                 //allowDepress: false,
-                tooltip: "select feature"
+                tooltip: "seleziona oggetti multipli"
                 // check item options:
                 ,enableToggle: true
-                ,checked: true
+                ,checked: false
                 ,xtype:'tbbutton', cls:'x-btn-icon'
-                ,icon:root_dir_html+'/common/icons/toolbar_icons/cselect.png', scale:'medium'
-                ,hidden:true
+                ,icon:root_dir_html+'/common/icons/toolbar_icons/multiselect.png', scale:'medium'
+                //,hidden:true
         });
-        actions["select"] = select_control;
+        actions["select"] = multiselect_control;
+
 
         /* Navigation control and MeasureTools controls in the same toggle group: */
         //Button for PAN control:
@@ -304,10 +312,10 @@ toolbarItems.push(new Ext.Toolbar.Spacer({width:10}));
                 ,icon:root_dir_html+'/common/icons/toolbar_icons/cpan.png', scale:'medium'
                 ,hidden:true
         });
-        actions["pan"] = pan_control;
+        //actions["pan"] = pan_control;
 
 	//toolbarItems.push(select_control); //cazzo lo aggiungevo 2 volte alla mappa, forse questa no e' necessaria
-        toolbarItems.push(pan_control);
+        //toolbarItems.push(pan_control);
 
 //toolbarItems.push("-");
 
@@ -1185,6 +1193,8 @@ toolbarItems.push("-");
 
 ////////////// MEASURE TOOLS //////////////////////
 //In teoria sarebbero dei tools di default ma per mantenere l'ordine sulla toolbar li devo scrivere qui in fondo:
+//// TEST SELEZIONE MULTIPLA ////
+if (multiselect_hidden==false)  toolbarItems.push(multiselect_control);
 toolbarItems.push(misura_lunghezza);
 toolbarItems.push(misura_area);
 toolbarItems.push(misura_heading);

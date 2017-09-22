@@ -79,6 +79,62 @@ var columns_bacini_tiny = new Ext.grid.ColumnModel({
 });
 
 
+
+/*FIUMI*/
+var style_fiumi_tiny = new OpenLayers.Style({
+        strokeColor: "#5cb5cf", strokeWidth: 2.5, fillOpacity: 0.5 
+        ,title: "${topo_princ}"
+        ,label: "${topo_princ}", labelAlign: "ct", fontWeight: "bold", fontFamily: "sans-serif", labelYOffset: -10
+        }, {
+        rules: [
+                new OpenLayers.Rule({
+                title: "Fiumi Lombardia",
+                minScaleDenominator: 250000,
+                symbolizer: {fontSize: "0px", strokeWidth:0.6}
+        }),
+        new OpenLayers.Rule({
+                title: "Fiumi Lombardia",
+                maxScaleDenominator: 250000,
+                symbolizer: {
+                        fontSize: "0px"
+                }
+        })
+]});
+
+var styleMap_fiumi_tiny = new OpenLayers.StyleMap({
+        "default": style_fiumi_tiny
+        ,"temporary": new OpenLayers.Style({strokeWidth:4, strokeOpacity:1, fillOpacity: 0.4, cursor: "pointer", fontSize: 0})
+});
+
+var fiumi_tiny = new OpenLayers.Layer.Vector(default_layer_name, {
+        styleMap: styleMap_fiumi_tiny,
+        strategies: [new OpenLayers.Strategy.Fixed()],
+        projection: OL_32632,
+        protocol: new OpenLayers.Protocol.WFS({
+                url: url_tinyows, featureType: "fiumi",
+                featureNS: "http://www.tinyows.org/",
+                srsName: "epsg:32632",
+                geometryName: "the_geom"
+        })
+});
+
+fiumi_tiny.setVisibility(false);
+
+store_fiumi_tiny = new GeoExt.data.FeatureStore({
+        fields: [
+                {name: "gid", type: "integer"},
+                {name: "topo_princ", type: "string"}
+                
+        ],
+        layer: fiumi_tiny
+});
+
+store_fiumi_tiny.on('load', function(store){
+      store.sort('id', 'ASC');
+});
+
+
+
 /*LIMITI COMUNALI*/
 var style_lim_comunali_tiny = new OpenLayers.Style();
 /*var bacini_rule = new OpenLayers.Rule({
@@ -212,6 +268,66 @@ store_lim_provinciali_tiny.on('load', function(store){
 		{header: "Area [km2]", dataIndex: "area", decimalPrecision: 3, align: "center"}
 	]
 });*/
+
+
+
+
+
+
+
+
+
+/*Aree Allerta Idro-Meteo*/
+//var style_aree_allerta_tiny = new OpenLayers.Style();
+var style_aree_allerta_tiny = new OpenLayers.Style({
+        strokeColor: "blue", strokeWidth: 0.8, fillOpacity: 0.5, fillColor: "blue", fillOpacity: 0.1
+        ,title: "Area allerta idro-meteo \n${codice_im}"
+        ,label: "Aree allerta idro-meteo", labelAlign: "ct", fontWeight: "bold", fontFamily: "sans-serif", labelYOffset: -10
+        }, {
+        rules: [
+                new OpenLayers.Rule({
+                title: "Aree allerta idro-meteo",
+                minScaleDenominator: 250000,
+                symbolizer: {fontSize: "0px", strokeWidth:0.6}
+        }),
+        new OpenLayers.Rule({
+                title: "Aree allerta idro-meteo",
+                maxScaleDenominator: 250000,
+                symbolizer: {
+                        fontSize: "0px"
+                }
+        })
+]});
+
+var styleMap_aree_allerta_tiny = new OpenLayers.StyleMap({
+        "default": style_aree_allerta_tiny
+        , "temporary": new OpenLayers.Style({strokeWidth:4, strokeOpacity:1, fillOpacity: 0.4, cursor: "pointer", fontSize: 0})
+});
+var aree_allerta_tiny = new OpenLayers.Layer.Vector(default_layer_name, {
+        styleMap: styleMap_aree_allerta_tiny,
+        strategies: [new OpenLayers.Strategy.Fixed()],
+        projection: OL_32632,
+        protocol: new OpenLayers.Protocol.WFS({
+                url: url_tinyows, featureType: "aree_allerta",
+                featureNS: "http://www.tinyows.org/",
+                srsName: "epsg:32632",
+                geometryName: "the_geom"
+        })
+});
+aree_allerta_tiny.setVisibility(false);
+store_aree_allerta_tiny = new GeoExt.data.FeatureStore({
+        fields: [
+                {name: "gid", type: "integer"},
+                {name: "nome", type: "string"},
+                /*{name: "sigla", type: "string"}*/
+        ],
+        layer: aree_allerta_tiny
+});
+store_aree_allerta_tiny.on('load', function(store){
+      store.sort('id', 'ASC');
+});
+
+
 
 /*STAZIONI IDRONIVOMETEO*/
 var style_staz = new OpenLayers.Style({
