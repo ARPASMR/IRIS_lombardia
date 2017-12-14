@@ -6,7 +6,6 @@
 
 #psql -d iris_base -U postgres -c "BEGIN; TRUNCATE dati_di_base.anagraficasensori; \copy dati_di_base.anagraficasensori(idstazione, idrete, proprieta, provincia, comune, attributo, utm_nord, utm_est, quota, idsensore, nometipologia, datainizio, datafine, storico, altezza, frequenza, fiume, bacino) from 'anagrafica_IRIS.csv' WITH NULL 'NULL'; END;"
 
-export PGPASSWORD=p0stgr3S
 
 psql -d iris_base -U postgres -c "TRUNCATE dati_di_base.anagraficasensori;"
 
