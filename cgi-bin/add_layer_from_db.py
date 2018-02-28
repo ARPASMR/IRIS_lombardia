@@ -178,8 +178,9 @@ function addlayer2layertb(layer_name) {
         var new_element = "<tr id=p_" + selected + " class='tablerow'><td class='order_in_webgis'></td><td class='legendName'>" + layer_name + "</td> <td>" + $('#'+selected+'').find('#layer_description').html() + "</td> " +
           "<td class='updateOrInsert' style='display:none;'>I</td>" +
           "<td class='group_index' style='text-align:center;'>" + select_group + "</td>" +
-	  "<td class='select' style='text-align:center;'><span class='button-checkbox'> <button type='button' class='btn' data-color='info'>select</button> <input type='checkbox' style='display:none;' class='hidden' unchecked /> </span> </td>" +
-          "<td class='highlight' style='text-align:center;'><span class='button-checkbox'> <button type='button' class='btn' data-color='primary'>hover</button> <input type='checkbox' style='display:none;' class='hidden' unchecked /> </span> </td>" +
+	  "<td class='select' style='text-align:center;'><span class='button-checkbox'> <button  name='select_btn' type='button' class='btn' data-color='info'>select</button> <input type='checkbox' style='display:none;' class='hidden' unchecked /> </span> </td>" +
+          "<td class='highlight' style='text-align:center;'><span class='button-checkbox'> <button  name='hover_btn' type='button' class='btn' data-color='primary'>hover</button> <input type='checkbox' style='display:none;' class='hidden' unchecked /> </span> </td>" +
+	  "<td class='multiselect' style='text-align:center;'><span class='button-checkbox'> <button  name='multiselect_btn' type='button' class='btn' data-color='warning'>multi</button> <input type='checkbox' style='display:none;' class='hidden' unchecked /> </span> </td>" +
           "<td class='visible' style='text-align:center;'><span class='button-checkbox'> <button type='button' class='btn' data-color='success'>visible</button> <input type='checkbox' style='display:none;' class='hidden' unchecked /> </span> </td>" +
           "<td style='text-align:center;'><img src='"+root_dir_html+"/common/icons/"+geometria_img+"' title='"+geometria+"' width='30' class='geom_img' /></td>" +
           "<td style='text-align:center;cursor:pointer;'><img src='"+root_dir_html+"/common/icons/up_button.png' title='Sposta avanti' width='20' class='up_button' /></td>" +
@@ -206,6 +207,14 @@ function addlayer2layertb(layer_name) {
         //Abilito il pulsante per l'inserimento su DB e disabilito quello per aggiungere altri layer:
 	$('#addValue').prop("disabled", true);
         $('#confirm_insert').prop("disabled", false);
+
+        //Disattivo i pulsanti "select" e "hover" e "multi" per i raster e i wms:
+        if ( geometria == 'RASTER' || geometria == 'WMS') {
+              $('#p_'+selected+' button[name=select_btn]').prop('disabled', true);
+              $('#p_'+selected+' button[name=hover_btn]').prop('disabled', true);
+              $('#p_'+selected+' button[name=multiselect_btn]').prop('disabled', true);
+	}
+
 
         //Rimuovo l'elemento dalla tabella:
         oTable.api().row('.selected').remove().draw( false );
@@ -297,9 +306,11 @@ function openStep3() {
 	var legendName = $(this).find(".legendName").html();
 	sel = $(this).find(".select");
 	hover = $(this).find(".highlight");
+	multisel = $(this).find(".multiselect");
 	var selection = 0;
 	if (sel.find(".active").length > 0) selection = 1;
 	if (hover.find(".active").length > 0) selection = 2;
+	if (multisel.find(".active").length > 0) selection = 3;
 	vis = $(this).find(".visible");
 	if (vis.find(".active").length > 0) visible = 1;
 	else visible = 0;
@@ -444,11 +455,12 @@ function geom_img(geometria) {
 }
 function selectORhighlight(value) {
     switch (value) {
-	case 1: select_str='checked'; highlight_str='unchecked'; break;
-	case 2: select_str='checked'; highlight_str='checked'; break;
-	default: select_str='unchecked'; highlight_str='unchecked'; 
+	case 1: select_str='checked'; highlight_str='unchecked'; multiselect_str='unchecked'; break;
+	case 2: select_str='checked'; highlight_str='checked'; multiselect_str='unchecked'; break;
+	case 3: select_str='checked'; highlight_str='checked'; multiselect_str='checked'; break;
+	default: select_str='unchecked'; highlight_str='unchecked'; multiselect_str='unchecked'; 
     }
-    return select_str, highlight_str;
+    return select_str, highlight_str, multiselect_str;
 }
 
 //Variabili importate da PYTHON:
@@ -579,8 +591,9 @@ def update_data():
 		value_toinsert + "</a></td> <td>" +value_description + "</td> " +
 		"<td class='updateOrInsert' style='display:none;'>U</td>" +
                 "<td class='group_index' style='text-align:center;'>" + select_group + "</td>" +
-		"<td class='select' style='text-align:center;'><span class='button-checkbox'> <button name='select_btn' type='button' class='btn' data-color='info'>select</button> <input type='checkbox' style='display:none;' class='hidden' " + select_str + " /> </span> </td>" +
+		"<td class='select' style='text-align:center;'><span class='button-checkbox'> <button name='select_btn' type='button' class='btn' data-color='info' >select</button> <input type='checkbox' style='display:none;' class='hidden' " + select_str + " /> </span> </td>" +
 		"<td class='highlight' style='text-align:center;'><span class='button-checkbox'> <button name='hover_btn' type='button' class='btn' data-color='primary'>hover</button> <input type='checkbox' style='display:none;' class='hidden' " + highlight_str + " /> </span> </td>" +
+		"<td class='multiselect' style='text-align:center;'><span class='button-checkbox'> <button name='multiselect_btn' type='button' class='btn' data-color='warning'>multi</button> <input type='checkbox' style='display:none;' class='hidden' " + multiselect_str + " /> </span> </td>" +
 		"<td class='visible' style='text-align:center;'><span class='button-checkbox'> <button type='button' class='btn' data-color='success'>visible</button> <input type='checkbox' style='display:none;' class='hidden' " + visible_str + " /> </span> </td>" +
 		"<td style='text-align:center;'><img src='"+root_dir_html+"/common/icons/"+geometria_img+"' title='"+geometria+"' width='30' class='geom_img' /></td>" +
 		"<td style='text-align:center;cursor:pointer;'><img src='"+root_dir_html+"/common/icons/up_button.png' title='Sposta avanti' width='20' class='up_button' /></td>" +
@@ -598,9 +611,11 @@ def update_data():
             #$('#addValue').prop("disabled", true);
             print '''$('#confirm_insert').prop("disabled", false);'''
 
-            #Disattivo i pulsanti "select" e "hover" per i raster e i wms:
-            #if (first_row['geom_type'] == 'RASTER'):
-            #  print '''$('button[name=select_btn]').prop("disabled", true);'''
+            #Disattivo i pulsanti "select" e "hover" e "multi" per i raster e i wms:
+            if (first_row['geom_type'] == 'RASTER' or first_row['geom_type'] == 'WMS'):
+              print "$('#p_%s button[name=select_btn]').prop('disabled', true);" % (first_row['layer_idx'])
+	      print "$('#p_%s button[name=hover_btn]').prop('disabled', true);" % (first_row['layer_idx'])
+	      print "$('#p_%s button[name=multiselect_btn]').prop('disabled', true);" % (first_row['layer_idx'])
 
             #Seleziono il gruppo di appartenenza gia' impostato:
             print '$("#select_group%s").val(group_index);' % (first_row['layer_idx'])
@@ -845,6 +860,7 @@ def insert_data():
 
 #Scelgo l'elemento principale:
 if step==1:
+  id_stab=None
   choose_stab()
 
 #Inserisco i valori sul FORM HTML:

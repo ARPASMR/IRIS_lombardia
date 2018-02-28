@@ -229,14 +229,19 @@ console.log("lat="+lat_rast+" e lon="+lon_rast); //in realta sono utm 900913
         //select00.toggle(true);
 
         /* L'unico modo per ovviare al fatto che la mappa zoomma tantissimo e' commentare questo nuovo Control.Navigation, poiche' a quanto pare ce ne sono 3 caricati sulla mappa. Basta digitare dalla console javascript:
-	map.getControlsByClass("OpenLayers.Control.Navigation");
-	E vedere come questo controllo compaia tante volte.
-	*/
- 	/*mapPanel.map.addControl(new OpenLayers.Control.Navigation(
-		//Ma tutto questo non serve a un cazzo perche' zoomma come minchia vuole
-	        {zoomWheelEnabled: true, mouseWheelOptions: {cumulative: false, interval: 100, maxDelta: 4}}
-	        //{zoomWheelEnabled: false }
-	)); //allows the user pan ability and mouseWheel*/
+        map.getControlsByClass("OpenLayers.Control.Navigation");
+        E vedere come questo controllo compaia tante volte.
+        mapPanel.map.addControl(new OpenLayers.Control.Navigation(
+                //Ma tutto questo non serve a niente perche ci sono dei Controls di default definiti in OL che prevalgono
+                {zoomWheelEnabled: true, mouseWheelOptions: {cumulative: false, interval: 50, maxDelta: 2}}
+        )); //allows the user pan ability and mouseWheel
+        */
+        //Provo a disabilitare i controlli tranne uno:
+        //http://www.stoimen.com/blog/2009/06/20/openlayers-disable-mouse-wheel-on-zoom/
+        controlsNav = map.getControlsByClass('OpenLayers.Control.Navigation');
+        for(var i=1; i<controlsNav.length; ++i)
+             controlsNav[i].disableZoomWheel();
+        //Funziona. Ma io preferivo avere il doppio zoom...
 
 	mapPanel.map.addControl(new OpenLayers.Control.MousePosition());
 	mapPanel.map.addControl(new OpenLayers.Control.KeyboardDefaults()); //ZoomBox pressing SHIFT.
@@ -280,20 +285,8 @@ var position = map.getLonLatFromPixel(e.xy);
 */
 
 
-// Vargiu 24/08/2017. Styles to switch off the roads in Google maps object
- 
-                 var style_off = [{
-                 "featureType" : "road",
-                 "stylers" : [{
-                             "visibility" : "off"
-                              }]
-                                 }];
-
-
-                console.log("Test visibility off for roads in google maps Terrain");
-
-                //todo: set an if clausole to catch the layer "Google Rilievo"
-                mapPanel.layers.map.layers[6].mapObject.setOptions({"styles": style_off});
+// Vargiu, Riccardo 17/10/2017. Set the style to switch off the roads in Google maps objects (style_off defined in base_layers.js)
+                mapPanel.map.getLayer('google_rilievo').mapObject.setOptions({"styles": style_off});
  
 
 ///////////////// END OF MAP PANEL //////////////////////////////
@@ -398,9 +391,12 @@ document.getElementsByTagName("head")[0].appendChild(e);
 			//insert: registerRadio
 		}
 		/*Altre opzioni:*/
-		//renderTo: 'layerTree', //border: true,
+                //,expand : true
+                //,collapsed : false
+		//renderTo: 'layerTree', 
+		//,border: true
 		//height: height_map, //width: Math.round(width_map*0.20), //circa 600*250,
-		//collapsible: true, //collapsed: true, //collapseMode: "mini", //root: layerList,
+		//,collapsible: true, collapsed: true, collapseMode: "mini"  //root: layerList,
 
 
 		/*Sviluppo su PRINT MODULE omesso*/
@@ -419,7 +415,7 @@ document.getElementsByTagName("head")[0].appendChild(e);
 //Il pannello che ospita la legenda e' definite a livello locale di ogni progetto WebGIS
 
 	var right_panel = new Ext.Panel({
-		region: "east", autoScroll: true, split: true, collapsible: true, collapsed: true,
+		region: "east", autoScroll: true, split: true, collapsible: true, collapsed: false,
 		width: Math.round(width_map*0.25),		
 		items: [layerTree, legend]
 		//layout: "border",

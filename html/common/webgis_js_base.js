@@ -91,11 +91,11 @@ var currentTimeUTC = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUT
 /////////////// RETRIEVE PARAMETERS FROM URL ////////////////
 function gup(name)
 {
-        name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+     name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
         var regexS = "[\\?&]"+name+"=([^&#]*)";
         var regex = new RegExp( regexS );
         var results = regex.exec( window.location.href );
-        if( results == null )
+  if( results == null )
                 return "";
         else
                 return results[1];
@@ -169,7 +169,6 @@ else {
         var y_center = 5000000;
         zoom_center = 3;
 }
-
 
 //Provo a mostrare una progress bar per il caricamento dei layer...NIENTE su Chrome
 /*

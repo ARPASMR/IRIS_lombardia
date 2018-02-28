@@ -34,10 +34,13 @@ function tipologia2title(tipologia) {
 }
 
 function grafici_rete(e, stazioni, tab_attivo, layer, composito) {
+  console.log('tst  grafici_rete scripts/js_functions.js ');
   composito = typeof composito !== 'undefined' ? composito : "2"; //definisco valori di default: in questo caso faccio solo i grafici semplici
     var width_plots = Math.round(screen_w * 0.80);
-    var effects = "location=0,width="+width_plots+",height=550,toolbar=0,resizable=1,scrollbars=1,status=0,titlebar=1,menubar=0";
-    var custom_height = 420; //altezza di default del frame
+    // orig var effects = "location=0,width="+width_plots+",height=550,toolbar=0,resizable=1,scrollbars=1,status=0,titlebar=1,menubar=0";
+    var effects = "location=0,width="+width_plots+",height=800,toolbar=0,resizable=1,scrollbars=1,status=0,titlebar=1,menubar=0";
+    // orig var custom_height = 420; //altezza di default del frame
+    var custom_height = 800; //altezza di default del frame
     var wname = "dati_stazione";
     var titles = "";
     var links = root_dir_html+"/common/scripts/plot_rete.php";
@@ -235,6 +238,8 @@ function grafici_rete(e, stazioni, tab_attivo, layer, composito) {
     }
     /*if (stazioni=='meteoidro_lm') var uri = root_dir_html+"/common/scripts/jquery_tab_lombardia.php?titles="+titles+"&links="+links+"&parametri="+parametri+"&id_staz="+codice_istat+"&tipo_tab=1&active_tab="+tab_attivo+"&root_dir_html="+root_dir_html+"&custom_height="+custom_height;
     else */
+
+  console.log('tst  grafici_rete eight:', effects);
     var uri = root_dir_html+php_url+"?titles="+titles+"&links="+links+"&parametri="+parametri+"&codice_istat="+codice_istat+"&progr_punto="+progr_punto+"&tipo_tab=1&active_tab="+tab_attivo+"&root_dir_html="+root_dir_html+"&custom_height="+custom_height+"&composito="+composito+"&stazioni="+stazioni;
     var pop_options = effects+",left=120,top=120";
     open_popup(uri, wname, pop_options, layer);

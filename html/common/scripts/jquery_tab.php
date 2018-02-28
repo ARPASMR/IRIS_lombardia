@@ -76,7 +76,7 @@ if (in_array(1, $composito)) {
   }
   else {
     //Volendo posso discriminare la query in base alla variabile "sorgente"
-    $query = "SELECT codice_istat_comune, progr_punto_com, denominazione, indirizzo, quota_stazione FROM dati_di_base.rete_meteoidrografica WHERE codice_istat_comune='$codice_istat' AND progr_punto_com=$progr_punto;";
+    $query = "SELECT codice_istat_comune, progr_punto_com, denominazione, indirizzo, quota_stazione FROM dati_di_base.v_anagrafica_soglie_idro WHERE codice_istat_comune='$codice_istat' AND progr_punto_com=$progr_punto;";
     $result = pg_query($conn, $query);
     if (!$result) {
     echo "Error on the query <br> " . $query;

@@ -30,27 +30,26 @@ var default_layer_name = "Nuovo layer";
 
 	//New GoogleMap Layers V3:
 	var gsat = new OpenLayers.Layer.Google("Google Satellite",
-		{type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 22}
+		{type: google.maps.MapTypeId.SATELLITE, MIN_ZOOM_LEVEL:6}
 	);
 	var gter = new OpenLayers.Layer.Google("Google Rilievo",
-                {type: google.maps.MapTypeId.TERRAIN, numZoomLevels: 22}
+                {type: google.maps.MapTypeId.TERRAIN,MIN_ZOOM_LEVEL:6,MAX_ZOOM_LEVEL:17}
         );
         
+        // Vargiu e Riccardo:  
+        // Per modificare gli stili di oggetti Google maps (road, label etc) 
+        // creo una variabile di stile personalizzato, riferimenti:
+        //http://osgeo-org.1560.x6.nabble.com/Google-v3-Styles-Maps-in-OpenLayers-td3919926.html
+        //https://developers.google.com/maps/documentation/javascript/styling
+        //https://mapstyle.withgoogle.com
 
+        var style_off = [ { featureType: "road", stylers: [ { visibility: "off" } ] } ];
          
-        // Vargiu.  Per modificare gli stili di oggetti Google maps (road, label etc) 
-        //          probabilmente si deve intervenire in common/scripts/geoext_general_produzione.js:95 
-        //          sfruttando qualche strategia del tipo: 
-        //                 mapPanel.mmap.addLayers([gter]);
-        //                 gter.mapObject.setOptions({"styles": my_style});
-        //
-        //          Dove my_stile e' un opportuno oggetto googlemap (vedi esempio in common/scripts/geoext_general_produzione.js  "style_off") 
-        //
-        //          Poiche' i "layers di base" sono caricati dal DB ed incapsulati in mapPanel,      
-        //          si dovrebbe accedere alle options di gter come:
-        //          mapPanel.layers.map.layers[6].mapObject.setOptions({"styles": my_style});
-        //
-        
+        //Qui assegno un id all'oggetto gter, quindi in common/scripts/geoext_general_produzione.js assegno lo style_off all'oggetto mapPanel.map.getLayer('google_rilievo').
+        gter.id = 'google_rilievo'; 
+
+
+
 
         var osmLayer = new OpenLayers.Layer.OSM("OpenStreetMap");
 	//var osmCycle = new OpenLayers.Layer.OSM.CycleMap("OpenCycleMap");
@@ -136,10 +135,20 @@ var wms_arpa =  new OpenLayers.Layer.WMS("WMS Arpa", "http://webgis.arpa.piemont
         {sphericalMercator: false, isBaseLayer: true, projection: OL_32632}
 );
 */
-var wms_arpa = new OpenLayers.Layer.ArcGIS93Rest('Sfondo Arpa Piemonte',
+/*var wms_arpa = new OpenLayers.Layer.ArcGIS93Rest('Sfondo Arpa Piemonte',
   "http://webgis.arpa.piemonte.it/ags101free/rest/services/topografia_dati_di_base/Topografica_Base_Multiscala_WM/MapServer/export"
   ,{sphericalMercator: true}
+);*/
+
+
+var wms_arcgis = new OpenLayers.Layer.ArcGIS93Rest('Sfondo Arcgis Light Gray',
+  "http://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/export"
+ ,{sphericalMercator: true}
 );
+
+/*
+var wms_arcgis = new OpenLayers.Layer.OSM('Sfondo Arcgis L',{url: 'http://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/export'});
+*/
 
 var wms_lombardia_ctr = new OpenLayers.Layer.WMS('CTR Regione Lombardia 10k',
   "http://www.cartografia.servizirl.it/arcgis/services/wms/ctr_wms/MapServer/WMSServer",

@@ -360,7 +360,7 @@ EOT;
 		  } //fine dell'IF se la cartella PADRE non era stata ancora processata
 		} //fine dell'ELSE se la cartella ha un padre
 	    }
-	    $treeConfig .= '{nodeType: "gx_baselayercontainer", text: "Carte di sfondo"}';
+	    $treeConfig .= '{nodeType: "gx_baselayercontainer", text: "Basi Cartografiche"}';
 	    $treeConfig .= ']';
 	    echo "<script> var treeConfig = " . $treeConfig . "; </script>";
 	    echo "<script> " . $groups_labels_str . "; </script>";

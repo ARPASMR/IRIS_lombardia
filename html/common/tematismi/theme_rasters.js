@@ -47,7 +47,7 @@ var size11 = new OpenLayers.Size(1017, 915);
 
 //Per immagini METEOSWISS - prova per la Lombardia:
 var bounds_meteoswiss = new OpenLayers.Bounds(299385, 5406475, 1387223, 6354697);
-var size_meteoswiss = new OpenLayers.Size(710, 640);
+var size_meteoswiss = new OpenLayers.Size(748, 652);
 url_raster_meteoswiss = root_dir_html+"/common/DATA/raster/meteoswiss/";
 var meteoswiss = new OpenLayers.Layer.Image(default_layer_name,
       url_raster_meteoswiss + "meteoswiss.radar.precip.png?rand="+d.getTime(),

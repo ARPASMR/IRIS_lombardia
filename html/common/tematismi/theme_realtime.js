@@ -179,6 +179,12 @@ var context_temp_lm = {
         else if (mapPanel.map.getScale() > 2500000) return 4;
         else return 16;
     }
+	//per gestire la dimensione (nivo-idro) in base alla scala visto che Rules e Context non vanno d'accordo (raggio +3 rispetto alle altre variabili):
+	,getRadius_nivo_idro: function() {
+        if (mapPanel.map.getScale() > 500000 && mapPanel.map.getScale() < 2500000) return 15;
+        else if (mapPanel.map.getScale() > 2500000) return 7;
+        else return 19;
+    }	
     ,getWidth: function(feature) {
         return (feature.cluster) ? 1.5 : 0.5; //se l'elemento e' clusterzizato il suo bordo e' piu' spesso
     }
@@ -225,6 +231,25 @@ var context_temp_lm = {
             else return give_color(label_scaled(feature.attributes.ultimovalore,''), 'idro');
         } //fine dell'else sul valore di scala della mappa
     }
+
+    /*******************************************************************************************/
+    ,getFillColor_igro: function(feature) {
+        if (mapPanel.map.getScale() > 2500000) return colors.neutral;
+        else {
+            if (feature.cluster) { //se interrogo un cluster e non la singola feature
+                feature.cluster.sort(function(a, b) { //NUMERICAL ORDER-pero' ha un problema con i valori NULL
+                  if (a.attributes.ultimovalore == null) a.attributes.ultimovalore = -99;
+                  if (b.attributes.ultimovalore == null) b.attributes.ultimovalore = -99;
+                  return b.attributes.ultimovalore - a.attributes.ultimovalore; //reverse order
+                });
+                return give_color(label_scaled(feature.cluster[0].attributes.ultimovalore,''), 'igro');
+            }
+            else return give_color(label_scaled(feature.attributes.ultimovalore,''), 'igro');
+        } //fine dell'else sul valore di scala della mappa
+    }
+    
+    /*******************************************************************************************/
+
     //Per dare un ALT col nome della stazione
     ,getTitle: function(feature) {
 	if (feature.cluster) { //se interrogo un cluster e non la singola feature
@@ -243,6 +268,21 @@ var context_temp_lm = {
         }
     }
 };
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// rule comuni per i layer misure
+var minScaleSens = new OpenLayers.Rule({
+                 title: " "
+                ,minScaleDenominator: 250000 
+                ,symbolizer: {pointRadius: 12}
+               });
+
+var maxScaleSens = new OpenLayers.Rule({
+                title: " "
+               ,maxScaleDenominator: 250000
+               ,symbolizer: {pointRadius: 6}
+                });
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 /*TEMPERATURE LOMBARDIA*/
@@ -286,8 +326,10 @@ var temperatura_lm = new OpenLayers.Layer.Vector(default_layer_name, {
                 })
         })
 });
+
 temperatura_lm.setVisibility(false);
 var store_terma_lm = new GeoExt.data.FeatureStore({
+        
         fields: [
                 {name: "idstazione", type: "integer"},
                 {name: "denominazione", type: "string"},
@@ -297,6 +339,7 @@ var store_terma_lm = new GeoExt.data.FeatureStore({
                 {name: "ultimovalore", type: "float"},
                 {name: "timeultimovalore", type: "string"}
         ],
+        
         layer: temperatura_lm
 });
 store_terma_lm.on('load', function(store){
@@ -316,7 +359,86 @@ var columns_terma_lm = new Ext.grid.ColumnModel({
         ]
 });
 
+/************************************IGRO*********************************************/
 
+var clust_temp_lm = new OpenLayers.Strategy.Cluster({
+    distance: 30 //pixel
+    , threshold: 2
+});  
+
+
+var style_igro_clust_lm = new OpenLayers.Style(
+    {   title: "${getTitle}",
+        label: "${getLabel}", labelAlign: "cm", fontWeight: "bold", fontFamily: "sans-serif", fontSize: 15
+        ,graphicName: "circle", fillColor: "${getFillColor_igro}", fillOpacity: 0.8, strokeColor:"black", pointRadius: "${getRadius}", strokeWidth: "${getWidth}"
+    }
+        //A quanto pare il context non funzione se c'e una Rule
+       ,{context: context_temp_lm} //context dentro allo style
+);
+
+
+
+var styleMap_igro_clust_lm = new OpenLayers.StyleMap({
+    "default": style_igro_clust_lm,
+    "select": new OpenLayers.Style({fontSize: 19, pointRadius: 18, fillColor: "blue", fillOpacity: 0.8}),
+    "temporary": new OpenLayers.Style({pointRadius: 20, fontSize: 19, cursor: "pointer"})
+});
+
+
+var umidita_lm = new OpenLayers.Layer.Vector(default_layer_name, {
+        //styleMap: styleMap_igro,
+        styleMap: styleMap_igro_clust_lm,
+        strategies: [new OpenLayers.Strategy.Fixed()
+        ,new OpenLayers.Strategy.Refresh({force: true, interval:150000})
+		,clust_temp_lm
+        ],
+        projection: OL_32632,
+        protocol: new OpenLayers.Protocol.WFS({
+                //version: "1.1.0", srsName: "epsg:23032", geometryName: "the_geom",
+                url: url_tinyows,
+                featureNS: "http://www.tinyows.org/",
+                featureType: "v_last_igro", //nuova logica dati da meteo_real_time
+                //geometryName: "the_geom"
+                readFormat: new OpenLayers.Format.GML({
+                        'internalProjection': OL_32632,
+                        'externalProjection': OL_32632
+                        })
+                })
+});
+
+umidita_lm.setVisibility(false);
+
+var store_igro_lm = new GeoExt.data.FeatureStore({
+        fields: [
+                {name: "idstazione", type: "integer"},
+                {name: "denominazione", type: "string"},
+                {name: "idsensore", type: "integer"},
+                {name: "utm_nord", type: "integer"},
+                {name: "utm_est", type: "integer"},
+                {name: "ultimovalore", type: "float"},
+                {name: "timeultimovalore", type: "string"}
+        ],
+        layer: umidita_lm
+});
+store_igro_lm.on('load', function(store){
+        store.sort('timeultimovalore', 'ASC');
+});
+var columns_igro_lm = new Ext.grid.ColumnModel({
+        defaults: {
+                sortable: true
+        },
+        columns: [
+                {header: "Id sensore", dataIndex: "idsensore",  width: 90},
+                {header: "Denominazione", dataIndex: "denominazione", width: 100},
+                {xtype: "numbercolumn", header: "Valore [%]", dataIndex: "ultimovalore", decimalPrecision: 1, align: "center", width: 60},
+                {id: "Date", header: "Data ora", dataIndex: "timeultimovalore", sortable: true, width: 70},
+                {header: "UTM X", dataIndex: "utm_est",  width: 90},
+                {header: "UTM Y", dataIndex: "utm_nord",  width: 90}
+        ]
+});    
+
+
+/*********************************************************************************/
 /*MAX VENTO (RAFFICA) LOMBARDIA*/
 //Provo tematizzazione con CLUSTER e cerchi colorati - devo definire un cluster strategy per ogni layer altrimenti non so perche sballa e lo fa solo sull'ultimo layer per cui e' definito!
 
@@ -391,25 +513,12 @@ var columns_raffica_lm = new Ext.grid.ColumnModel({
 });
 
 
+/*********************************************************************************/
 /*LIVELLI IDROMETRICI LOMBARDIA*/
-//Provo tematizzazione con CLUSTER e cerchi colorati - devo definire un cluster strategy per ogni layer altrimenti non so perche sballa e lo fa solo sull'ultimo layer per cui e' definito!
-/*
-var clust_temp_lm = new OpenLayers.Strategy.Cluster({
-    distance: 0 //pixel
-    , threshold: 2
-});
-var style_temp_clust_lm = new OpenLayers.Style(
-    {   title: "${getTitle}",
-        label: "${getLabel}", labelAlign: "cm", fontWeight: "bold", fontFamily: "sans-serif", fontSize: 15
-        ,graphicName: "circle", fillColor: "${getFillColor_idro}", fillOpacity: 0.8, strokeColor:"black", pointRadius: "${getRadius}", strokeWidth: "${getWidth}"
-    }
-    //A quanto pare il context non funzione se c'e una Rule
-    ,{context: context_temp_lm} //context dentro allo style
-);
-*/
+
 var style_temp_clust_lm = new OpenLayers.Style({
-	pointRadius: 12, strokeColor: "black", strokeWidth: 0.4, fillOpacity: 0.8//, strokeOpacity: 0.5, fillOpacity: 0.3, fillColor: "gray"
-        ,title: "${denominazione}"
+	pointRadius: "${getRadius_nivo_idro}", strokeColor: "black", strokeWidth: 0.4, fillOpacity: 0.8//, strokeOpacity: 0.5, fillOpacity: 0.3, fillColor: "gray"
+        ,title: "${denominazione}\nOra (CET) ultima misura: ${timeultimovalore}"
         ,label: "${ultimovalore}", labelAlign: "cm", fontWeight: "bold", fontFamily: "sans-serif", fontSize: 15
         }, {
         rules: [
@@ -443,7 +552,7 @@ var style_temp_clust_lm = new OpenLayers.Style({
                         type: OpenLayers.Filter.Comparison.EQUAL_TO,
                         property: "stato_idro", value: 0
                 })
-                ,symbolizer: {pointRadius: 6, strokeWidth:0.5, fillColor: "green"}
+                ,symbolizer: {pointRadius: 6, strokeWidth:0.5,fillColor: "green"}
         }),
 	new OpenLayers.Rule({
                 title: "Idrometro senza soglie",
@@ -451,42 +560,26 @@ var style_temp_clust_lm = new OpenLayers.Style({
                         type: OpenLayers.Filter.Comparison.EQUAL_TO,
                         property: "stato_idro", value: -1
                 })
-                ,symbolizer: {pointRadius: 6, strokeWidth:0.5, fillColor: "gray"}
-        }),
-
-	new OpenLayers.Rule({
-                title: " ",
-                maxScaleDenominator:2500000,
-                symbolizer: {pointRadius: 12}
-        }),
-     
- 	new OpenLayers.Rule({
-                title: " ",
-		minScaleDenominator: 2500000,
-                symbolizer: {pointRadius: 4},
+                ,symbolizer: {pointRadius: 6, strokeWidth:0.5, fillColor: "lightgray"}
         })
 
-	 /* new OpenLayers.Rule({
-                title: " ",
-                maxScaleDenominator: 500000,
-               	symbolizer: {
-                        pointRadius: 16
-                }
-        })*/
+         ,maxScaleSens
+         ,minScaleSens
 ]});
+
+
+
 
 var styleMap_temp_clust_lm = new OpenLayers.StyleMap({
     "default": style_temp_clust_lm,
     "select": new OpenLayers.Style({fontSize: 19, pointRadius: 18, fillColor: "blue", fillOpacity: 0.8}),
     "temporary": new OpenLayers.Style({pointRadius: 20, fontSize: 19, cursor: "pointer"})
 });
+
 var livello_lm = new OpenLayers.Layer.Vector(default_layer_name, {
         styleMap: styleMap_temp_clust_lm,
-        //minScale: 250000,
         strategies: [new OpenLayers.Strategy.Fixed()
             ,new OpenLayers.Strategy.Refresh({force: true, interval:150000})
-            //,filterStrategy_temp
-	    //,clust_temp_lm
         ],
         projection: OL_32632,
         protocol: new OpenLayers.Protocol.WFS({
@@ -502,6 +595,7 @@ var livello_lm = new OpenLayers.Layer.Vector(default_layer_name, {
                 })
         })
 });
+
 livello_lm.setVisibility(false);
 var store_idro_lm = new GeoExt.data.FeatureStore({
         fields: [
@@ -532,8 +626,63 @@ var columns_idro_lm = new Ext.grid.ColumnModel({
         ]
 });
 
+/*LIVELLI IDROMETRICI ALTRI ENTI*/
+//utilizzo lo stesso stile per rete Arpa Lombardia
+/*********************************************************************************/
+var livello_altri_lm = new OpenLayers.Layer.Vector(default_layer_name, {
+        styleMap: styleMap_temp_clust_lm,
+        strategies: [new OpenLayers.Strategy.Fixed()
+            ,new OpenLayers.Strategy.Refresh({force: true, interval:150000})
+        ],
+        projection: OL_32632,
+        protocol: new OpenLayers.Protocol.WFS({
+                //version: "1.1.0", srsName: "epsg:23032", geometryName: "the_geom",
+                url: url_tinyows,
+                featureNS: "http://www.tinyows.org/",
+                featureType: "v_last_altri_idro", //nuova logica dati da meteo_real_time
+                //featurePrefix: "tows",
+                readFormat: new OpenLayers.Format.GML({
+                        'internalProjection': OL_32632,
+                        'externalProjection': OL_32632
+                })
+        })
+});
 
+livello_altri_lm.setVisibility(false);
 
+var store_altri_idro_lm = new GeoExt.data.FeatureStore({
+        fields: [
+                {name: "idstazione", type: "integer"},
+                {name: "denominazione", type: "string"},
+                {name: "idsensore", type: "integer"},
+                {name: "utm_nord", type: "integer"},
+                {name: "utm_est", type: "integer"},
+                {name: "ultimovalore", type: "float"},
+                {name: "timeultimovalore", type: "string"}
+        ],
+        layer: livello_altri_lm
+});
+store_altri_idro_lm.on('load', function(store){
+        store.sort('timeultimovalore', 'ASC');
+});
+
+var columns_altri_idro_lm = new Ext.grid.ColumnModel({
+        defaults: {
+                sortable: true
+        },
+        columns: [
+                {header: "Id sensore", dataIndex: "idsensore",  width: 90},
+                {header: "Denominazione", dataIndex: "denominazione", width: 100},
+                {xtype: "numbercolumn", header: "Valore [cm]", dataIndex: "ultimovalore", decimalPrecision: 1, align: "center", width: 60},
+                {id: "Date", header: "Data ora", dataIndex: "timeultimovalore", sortable: true, width: 70},
+                {header: "UTM X", dataIndex: "utm_est",  width: 90},
+                {header: "UTM Y", dataIndex: "utm_nord",  width: 90}
+        ]
+});
+
+//console.log('Test misure 7');
+
+/*********************************************************************************/
 /*PRECIPITAZIONI LOMBARDIA*/
 //Provo tematizzazione con CLUSTER e cerchi colorati - devo definire un cluster strategy per ogni layer altrimenti non so perche sballa e lo fa solo sull'ultimo layer per cui e' definito!
 var style_temp_clust_lm = new OpenLayers.Style(
@@ -601,18 +750,6 @@ var columns_pluvio_lm = new Ext.grid.ColumnModel({
         ]
 });
 
-
-////////////////////////////////////////////////////////////////////
-//Vargiu 16/08/2017. Funzione test per il pointRadius delle precipitazioni cumulate.
-/*
-    function getRadius_prec() {
-        if (this.mapPanel.map.getScale() > 500000 && this.mapPanel.map.getScale() < 2500000) return 12;
-        else if (this.mapPanel.map.getScale() > 2500000) return 4;
-             else return 6;
-    }
-    
-console.log("Vargiu ");
-*/
 
 //Tematismi Precipitazione cumulata//
 /* STILE CUMULATA PIOGGIA (12 e 24 H)PER ALLERTA IDRO-METEO */
@@ -710,7 +847,7 @@ var style_cum_prec_alert = new OpenLayers.Style({
 
 
 
-/* STILE CUMULATA PIOGGIA (1 ; 3 ; 6 e 9 H) CON RATE EQUIVALENTE ALLE SOGLIE ALLERTA IDRO-METEO PER 12H */
+/* STILE CUMULATA PIOGGIA (1 ; 3 ; 6 , 9 h) CON RATE EQUIVALENTE ALLE SOGLIE ALLERTA IDRO-METEO PER 12h*/
 var style_cum_prec_rate_alert = new OpenLayers.Style({
         pointRadius: 12, strokeColor: "black", strokeWidth: 0.4, fillOpacity: 0.8//, strokeOpacity: 0.5, fillOpacity: 0.3, fillColor: "gray"
         ,title: "${denominazione} \nOra (CET) ultima misura: ${timeultimovalore}"
@@ -804,7 +941,7 @@ var style_cum_prec_rate_alert = new OpenLayers.Style({
 ]});
 
 
-/* STILE ORIGINARIO CUMULATA PIOGGIA 1;3;6;9;12;24H */
+/* STILE ORIGINARIO CUMULATA PIOGGIA 1;3;6;9;12;24;48;72h */
 var style_cum_prec = new OpenLayers.Style({
         pointRadius: 12, strokeColor: "black", strokeWidth: 0.4, fillOpacity: 0.8//, strokeOpacity: 0.5, fillOpacity: 0.3, fillColor: "gray"
         ,title: "${denominazione} \nOra (CET) ultima misura: ${timeultimovalore}"
@@ -817,26 +954,50 @@ var style_cum_prec = new OpenLayers.Style({
         ,{
         rules: [
             new OpenLayers.Rule({
-                title: "Cumulata 0.1 - 1",
+                title: "Cumulata 0.1 - 10",
                 filter: new OpenLayers.Filter.Comparison({
                         type: OpenLayers.Filter.Comparison.BETWEEN,
                         property: "ultimovalore",
                         lowerBoundary: 0.1,
-                        upperBoundary: 1
+                        upperBoundary: 10
                         })
                 ,symbolizer: {pointRadius: 6, strokeWidth:0.5, fillColor: "green", fontSize: 15}             
                 }),
 				
             new OpenLayers.Rule({
-                title: "Cumulata > 1",
+                title: "Cumulata 10 - 50",
                 filter: new OpenLayers.Filter.Comparison({
-                        type: OpenLayers.Filter.Comparison.GREATER_THAN,
-                        property: "ultimovalore", value: 1
+                        type: OpenLayers.Filter.Comparison.BETWEEN,
+                        property: "ultimovalore",
+                        lowerBoundary: 10,
+                        upperBoundary: 50
                         })
                 ,symbolizer: {pointRadius: 6, strokeWidth:0.5, fillColor: "yellow", fontSize: 15}
                 }),
 
-				new OpenLayers.Rule({
+
+            new OpenLayers.Rule({
+                title: "Cumulata 50 - 100",
+                filter: new OpenLayers.Filter.Comparison({
+                        type: OpenLayers.Filter.Comparison.BETWEEN,
+                        property: "ultimovalore",
+                        lowerBoundary: 50,
+                        upperBoundary: 100
+                        })
+                ,symbolizer: {pointRadius: 6, strokeWidth:0.5, fillColor: "orange", fontSize: 15}
+                }),
+
+			new OpenLayers.Rule({
+                title: "Cumulata > 100",
+                filter: new OpenLayers.Filter.Comparison({
+                        type: OpenLayers.Filter.Comparison.GREATER_THAN,
+                        property: "ultimovalore", value:100
+                        })
+                ,symbolizer: {pointRadius: 6, strokeWidth:0.5, fillColor: "red", fontSize: 15}
+                }),
+
+
+           new OpenLayers.Rule({
                 title: " ",
                 minScaleDenominator: 2500000,
                 name: "scaleNoLegnd",
@@ -1207,27 +1368,137 @@ var columns_cum24h = new Ext.grid.ColumnModel({
         ]
 });
 
+
+
+
+/* CUMULATA PIOGGIA 48H */
+var styleMap_cum48h = new OpenLayers.StyleMap({
+    "default": style_cum_prec,
+    "select": new OpenLayers.Style({fontSize: 19, pointRadius: 18, fillColor: "blue", fillOpacity: 0.8}),
+    "temporary": new OpenLayers.Style({pointRadius: 20, fontSize: 19, cursor: "pointer"})
+});
+var cum48h = new OpenLayers.Layer.Vector(default_layer_name, {
+        styleMap: styleMap_cum48h,
+        strategies: [new OpenLayers.Strategy.Fixed()
+            ,new OpenLayers.Strategy.Refresh({force: true, interval:150000})
+        ],
+        projection: OL_32632,
+        protocol: new OpenLayers.Protocol.WFS({
+                url: url_tinyows,
+                featureNS: "http://www.tinyows.org/",
+                featureType: "v_last_pluvio48h", //nuova logica dati da meteo_real_time
+                geometryName: "the_geom"
+        })
+});
+cum48h.setVisibility(false);
+
+var store_cum48h = new GeoExt.data.FeatureStore({
+        fields: [
+                {name: "idstazione", type: "integer"},
+                {name: "denominazione", type: "string"},
+                {name: "idsensore", type: "integer"},
+                {name: "utm_nord", type: "integer"},
+                {name: "utm_est", type: "integer"},
+                {name: "ultimovalore", type: "float"},
+                {name: "timeultimovalore", type: "string"}
+        ],
+        layer: cum48h
+});
+store_cum48h.on('load', function(store){
+        store.sort('timeultimovalore', 'ASC');
+});
+var columns_cum48h = new Ext.grid.ColumnModel({
+        defaults: {
+                sortable: true
+        },
+        columns: [
+                {header: "Id sensore", dataIndex: "idsensore",  width: 90},
+                {header: "Denominazione", dataIndex: "denominazione", width: 100},
+                {xtype: "numbercolumn", header: "Valore [mm]", dataIndex: "ultimovalore", decimalPrecision: 0, align: "center", width: 60},
+                {id: "Date", header: "Data ora ultimo dato", dataIndex: "timeultimovalore", sortable: true, width: 70},
+                {header: "UTM X", dataIndex: "utm_est",  width: 90},
+                {header: "UTM Y", dataIndex: "utm_nord",  width: 90}
+        ]
+});
+
+
+/* CUMULATA PIOGGIA 72H */
+var styleMap_cum72h = new OpenLayers.StyleMap({
+    "default": style_cum_prec,
+    "select": new OpenLayers.Style({fontSize: 19, pointRadius: 18, fillColor: "blue", fillOpacity: 0.8}),
+    "temporary": new OpenLayers.Style({pointRadius: 20, fontSize: 19, cursor: "pointer"})
+});
+
+var cum72h = new OpenLayers.Layer.Vector(default_layer_name, {
+        styleMap: styleMap_cum72h,
+        strategies: [new OpenLayers.Strategy.Fixed()
+            ,new OpenLayers.Strategy.Refresh({force: true, interval:150000})
+        ],
+        projection: OL_32632,
+        protocol: new OpenLayers.Protocol.WFS({
+                url: url_tinyows,
+                featureNS: "http://www.tinyows.org/",
+                featureType: "v_last_pluvio72h", //nuova logica dati da meteo_real_time
+                geometryName: "the_geom"
+        })
+});
+cum72h.setVisibility(false);
+
+var store_cum72h = new GeoExt.data.FeatureStore({
+        fields: [
+                {name: "idstazione", type: "integer"},
+                {name: "denominazione", type: "string"},
+                {name: "idsensore", type: "integer"},
+                {name: "utm_nord", type: "integer"},
+                {name: "utm_est", type: "integer"},
+                {name: "ultimovalore", type: "float"},
+                {name: "timeultimovalore", type: "string"}
+        ],
+        layer: cum72h
+});
+store_cum72h.on('load', function(store){
+        store.sort('timeultimovalore', 'ASC');
+});
+var columns_cum72h = new Ext.grid.ColumnModel({
+        defaults: {
+                sortable: true
+        },
+        columns: [
+                {header: "Id sensore", dataIndex: "idsensore",  width: 90},
+                {header: "Denominazione", dataIndex: "denominazione", width: 100},
+                {xtype: "numbercolumn", header: "Valore [mm]", dataIndex: "ultimovalore", decimalPrecision: 0, align: "center", width: 60},
+                {id: "Date", header: "Data ora ultimo dato", dataIndex: "timeultimovalore", sortable: true, width: 70},
+                {header: "UTM X", dataIndex: "utm_est",  width: 90},
+                {header: "UTM Y", dataIndex: "utm_nord",  width: 90}
+        ]
+});
+
+
 //Fine tematismi Precipitazione cumulata//
- 
+/*****************************************************************************************/
+
+
+/*****************************************************************************************/
+/*****************************************************************************************/
 
 /*LIVELLI NIVOMETRICI LOMBARDIA*/
 //Provo tematizzazione con CLUSTER e cerchi colorati - devo definire un cluster strategy per ogni layer altrimenti non so perche sballa e lo fa solo sull'ultimo layer per cui e' definito!
 
 var clust_temp_lm = new OpenLayers.Strategy.Cluster({
-    distance:0 //pixel
+    distance: 30 //pixel
     , threshold: 2
 });
 var style_temp_clust_lm = new OpenLayers.Style(
     {   title: "${getTitle}",
         label: "${getLabel}", labelAlign: "cm", fontWeight: "bold", fontFamily: "sans-serif", fontSize: 15
-        ,graphicName: "circle", fillColor: "${getFillColor_idro}", fillOpacity: 0.8, strokeColor:"black", pointRadius: "${getRadius}", strokeWidth: "${getWidth}"
+        ,graphicName: "circle", fillColor: "${getFillColor_idro}", fillOpacity: 0.8, strokeColor:"black", pointRadius: "${getRadius_nivo_idro}", strokeWidth: "${getWidth}"
     }
     //A quanto pare il context non funzione se c'e una Rule
     ,{context: context_temp_lm} //context dentro allo style
 );
 var styleMap_temp_clust_lm = new OpenLayers.StyleMap({
     "default": style_temp_clust_lm,
-    "select": new OpenLayers.Style({fontSize: 19, pointRadius: 18, fillColor: "blue", fillOpacity: 0.8}),
+    "select": new OpenLayers.Style({fontSize:19, pointRadius: 18, fillColor: "blue", fillOpacity: 0.8}),
     "temporary": new OpenLayers.Style({pointRadius: 20, fontSize: 19, cursor: "pointer"})
 });
 var livelloneve_lm = new OpenLayers.Layer.Vector(default_layer_name, {
@@ -1236,7 +1507,7 @@ var livelloneve_lm = new OpenLayers.Layer.Vector(default_layer_name, {
         strategies: [new OpenLayers.Strategy.Fixed()
             ,new OpenLayers.Strategy.Refresh({force: true, interval:150000})
             //,filterStrategy_temp
-            //,clust_temp_lm
+            ,clust_temp_lm
         ],
         projection: OL_32632,
         protocol: new OpenLayers.Protocol.WFS({

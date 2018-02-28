@@ -44,6 +44,7 @@ var colors_pluv = {
     neutral: "#c7c7fd" //azzurro-sporco
 };
 function give_color(value, layer_name) {
+    if (value==-999) value="";
     //Per le temperature:
     if (layer_name=='temp') {
         if (value==="") return colors.nodata;
@@ -82,6 +83,21 @@ function give_color(value, layer_name) {
         //else if (value==3) return colors.s_high;
         else return colors_idro.low;
     }
+/****************************************************/
+    else if (layer_name=='igro') {		
+        if (value==="") return colors.nodata;
+        else if (value<15) return colors.m_high;
+        else if (value>=15 && value<30) return colors.high;
+        else if (value>=30 && value<45) return colors.middle;
+        else if (value>=45 && value<60) return colors.m_middle;
+        else if (value>=60 && value<75) return colors.s_middle;
+        else if (value>=75 && value<90) return colors.low;
+        else if (value>=90 && value<100) return colors.m_low;
+        else if (value>=100) return colors.s_low;
+        else return colors.nodata;
+    }
+/****************************************************/
+
 };
 
 //Provo a creare dei simboli per il vento:

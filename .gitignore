@@ -1,0 +1,8 @@
+**/BKP
+**/DATA/idro/*  
+**/DATA/modelli/*
+**/DATA/nivo/*
+**/DATA/raster/meteoswiss/animazione/*
+**/DATA/raster/meteoswiss/elaborati/*
+**/mapfiles/tmp/*
+*.pyc

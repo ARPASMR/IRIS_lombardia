@@ -247,6 +247,7 @@ array_push($lista_js2load, $themes_path . "/base_layers.js");
 array_push($lista_js2load, $scripts_path . "/js_functions.js");
 array_push($lista_js2load, $themes_path . "/theme_stili.js");
 array_push($lista_js2load, $themes_path . "/theme_datidibase.js");
+array_push($lista_js2load, $themes_path . "/theme_portate.js");
 array_push($lista_js2load, $themes_path . "/theme_realtime.js");
 array_push($lista_js2load, $themes_path . "/theme_rasters.js");
 array_push($lista_js2load, $scripts_path . "/credit_tab.js");

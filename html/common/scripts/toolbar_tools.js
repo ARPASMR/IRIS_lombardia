@@ -24,6 +24,7 @@ function toolTipsOut(feature){
 ////Adesso a seconda del layer di base che voglio caricare scelgo le opzioni della mappa.
 
 //BASE_LAYERS=UNO --> caricamento per WMS Arpa WGS84-UTM
+
 if (base_layers == 1) {
         options = {
                 projection        : OL_32632,
@@ -40,18 +41,22 @@ if (base_layers == 1) {
 else {
         options = {
                 projection: OL_900913
-                ,maxResolution: "auto"
+               ,maxResolution: "auto"  
                 //Provo a risettare alcuni valori iniziali per aiutare TileCache:
                 ,maxExtent: new OpenLayers.Bounds(-2000000,3500000,4000000,7500000)
-                ,resolutions:[156543.03390000001, 78271.516950000005, 39135.758475000002, 19567.879237500001, 9783.9396187500006, 4891.9698093750003, 2445.9849046875001, 1222.9924523437501, 611.49622617187504, 305.74811308593752, 152.87405654296876, 76.43702827148438, 38.21851413574219, 19.109257067871095, 9.5546285339355475, 4.7773142669677737, 2.3886571334838869, 1.1943285667419434, 0.59716428337097172, 0.29858214168548586]
+                ,resolutions:[156543.03390000001, 78271.516950000005, 39135.758475000002, 19567.879237500001, 9783.9396187500006, 4891.9698093750003, 2445.9849046875001, 1222.9924523437501, 611.49622617187504, 305.74811308593752, 152.87405654296876, 76.43702827148438, 38.21851413574219, 19.109257067871095, 9.5546285339355475, 4.7773142669677737, 2.3886571334838869/*, 1.1943285667419434, 0.59716428337097172, 0.29858214168548586*/]//commentati i 3 zoom di dettaglio perche' la mappa di arcgis non carica a quei livelli di zoom
                 ,units: "m"
-                ,numZoomLevels: 20
+               /* ,numZoomLevels: 20*/
                 ,tileSize: new OpenLayers.Size(256, 256)
                 ,displayProjection: OL_4326
                 ,allOverlays: false //e' un opzione di GeoExt messa a false, ma non ho ben capito a cosa serva...
                 , theme: null //per non far ricaricare ad Openlayers lo style.css
         };
-} //Fine dell'ELSE se BASE_LAYERS=ZERO
+} 
+
+
+
+//Fine dell'ELSE se BASE_LAYERS=ZERO
 
 map = new OpenLayers.Map('map', options);
 
@@ -67,7 +72,7 @@ function toolbar_tools_default() {
         layers_to_select,
         {
         clickout: true, toggle: false,
-        multiple: false, hover: false,
+        multiple: false, hover: false
         //toggleKey: "ctrlKey", // ctrl key removes from selection
         //multipleKey: "shiftKey" // shift key adds to selection
 		//,box: true
@@ -267,9 +272,9 @@ toolbarItems.push(new Ext.Toolbar.Spacer({width:10}));
                                 {
                                 clickout: true, toggle: false,
                                 multiple: false, hover: false,
-				box: true,
-                                toggleKey: "ctrlKey", // ctrl key removes from selection
-                                multipleKey: "shiftKey" // shift key adds to selection
+				box: true, multipleKey: "shiftKey" // shift key adds to selection
+                                ,toggleKey: "ctrlKey" // ctrl key removes from selection
+                                
                                 }
                 ),
 		//devo creare un handler per riattivare la selezione normale:
@@ -312,10 +317,10 @@ toolbarItems.push(new Ext.Toolbar.Spacer({width:10}));
                 ,icon:root_dir_html+'/common/icons/toolbar_icons/cpan.png', scale:'medium'
                 ,hidden:true
         });
-        //actions["pan"] = pan_control;
+        actions["pan"] = pan_control;
 
-	//toolbarItems.push(select_control); //cazzo lo aggiungevo 2 volte alla mappa, forse questa no e' necessaria
-        //toolbarItems.push(pan_control);
+	//toolbarItems.push(select_control);  forse questa no e' necessaria ?????
+        toolbarItems.push(pan_control);
 
 //toolbarItems.push("-");
 

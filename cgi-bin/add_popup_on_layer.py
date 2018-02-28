@@ -398,7 +398,7 @@ WHERE table_name=(SELECT tablename FROM eccoqua) ORDER BY ordinal_position;""".f
 	    dropdown_campi += """> %s </option>""" % (row_field['column_name'])
 
     ### OPEN POPUP ###
-    input_link = """<input id='url_link' list='link' size=80 maxlength=250 value="%s"/> url_link: url da aprire, puo' essere un indirizzo http o locale e contenere riferimenti al layer o all'elemento selezionato (nel menu a tendina alcuni esempi)
+    input_link = """<input id='url_link' list='link' size=80 maxlength=512 value="%s"/> url_link: url da aprire, puo' essere un indirizzo http o locale e contenere riferimenti al layer o all'elemento selezionato (nel menu a tendina alcuni esempi)
 <datalist id='link'>
   <option value='"https://www.arpa.piemonte.gov.it/bollettini/bollettino_allerta.pdf"'>
   <option value='root_dir_html+"/cgi-bin/storm_db.py?id="+e.feature.attributes.id'>

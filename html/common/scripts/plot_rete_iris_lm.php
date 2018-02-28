@@ -25,8 +25,11 @@ include_once('../config_iris.php');
 
 date_default_timezone_set('UTC');
 
-$realtimetable_from = 'realtime.v_meteo_real_time';
-$basetable_from = 'dati_di_base.v_anagraficasensori';
+//$realtimetable_from = 'realtime.v_meteo_real_time';
+$realtimetable_from = 'realtime.v_meteo_tot_real_time'; //vista tempo reale di tutte le stazioni Arpa e altri enti
+
+//$basetable_from = 'dati_di_base.v_anagraficasensori';
+$basetable_from = 'dati_di_base.v_anagrafica_soglie_idro'; //anagrafica completa Arpa e altri enti 
 $timezone_data = 'CET';
 
 //Recupero alcune info dall'URL del popup.js:
@@ -62,11 +65,11 @@ $pass_time = 10;
 
 if($id_parametro=='PP') {
 	//Problema questa query: accorpa come dato orario dei dati anche se il ciclo orario non e' completo
-	$query = "SELECT to_char(data_e_ora - '1 minute'::interval,'YYYY-MM-DD HH24:00:00')::timestamp + '1 hour'::interval AS data, sum(valore_originale) AS valore_originale, max(tipologia_validaz), max(data_agg) FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro = '$id_parametro' GROUP BY to_char(data_e_ora - '1 minute'::interval,'YYYY-MM-DD HH24:00:00')::timestamp + '1 hour'::interval ORDER BY data ASC;";
+	$query = "SELECT to_char(data_e_ora - '1 minute'::interval,'YYYY-MM-DD HH24:00:00')::timestamp + '1 hour'::interval AS data, sum(CASE WHEN valore_originale < 0. THEN NULL ELSE valore_originale END) AS valore_originale, max(tipologia_validaz), max(data_agg) FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro = '$id_parametro' GROUP BY to_char(data_e_ora - '1 minute'::interval,'YYYY-MM-DD HH24:00:00')::timestamp + '1 hour'::interval ORDER BY data ASC;";
 	//Con questa query invece il passo temporale e' di 1 ora:
 	$query_cumulata = "SELECT data, sum(valore_originale) OVER (ORDER BY data ASC) FROM (SELECT to_char(data_e_ora - '1 minute'::interval,'YYYY-MM-DD HH24:00:00')::timestamp + '1 hour'::interval AS data, sum(valore_originale) AS valore_originale FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro = '$id_parametro' GROUP BY to_char(data_e_ora - '1 minute'::interval,'YYYY-MM-DD HH24:00:00')::timestamp + '1 hour'::interval) AS foo;";
 	//query per prendere la pioggia alla frequenza del sensore:
-	$query_cumulata = "SELECT dd::timestamp without time zone as data, sum(dati_staz.valore_originale) OVER (ORDER BY dd ASC) AS valore_originale, dati_staz.tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro LIKE '$id_parametro%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT data_e_ora AS data, valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%') AS dati_staz ON (dd=dati_staz.data) ORDER BY data ASC;";
+	$query_cumulata = "SELECT dd::timestamp without time zone as data, sum(dati_staz.valore_originale) OVER (ORDER BY dd ASC) AS valore_originale, dati_staz.tipologia_validaz, max(dati_staz.data_agg) OVER () AS data_agg FROM generate_series ( (select min(data_e_ora) from $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro LIKE '$id_parametro%') , now() at time zone '$timezone_data', (select max(frequenza) from $realtimetable_from a WHERE a.id_sensore = $idsensore) * INTERVAL '1 minute') dd LEFT OUTER JOIN (SELECT data_e_ora AS data, CASE WHEN valore_originale < 0.0 THEN NULL ELSE valore_originale END AS valore_originale, tipologia_validaz, data_agg FROM $realtimetable_from a WHERE a.id_sensore = $idsensore AND id_parametro like '$id_parametro%') AS dati_staz ON (dd=dati_staz.data) ORDER BY data ASC;";
 	//Riconverto il parametro secondo quelli classici per mantenere le impostazioni sui grafici:
 	$id_parametro='PLUV';
 }
@@ -157,7 +160,7 @@ else {
 }
 
 // Recupero quota e soglie idrometriche per la stazione:
-$query_datigenerali = "SELECT denominazione, quota, NULL as codice1, NULL as codice2, NULL as codice3, NULL as codice1, NULL as codice2, NULL as codice3, NULL as codice2, NULL as codice3 FROM $basetable_from a  WHERE a.idstazione = $cod_staz;";
+$query_datigenerali = "SELECT denominazione, quota, soglia_idro_ordinaria as codice1, soglia_idro_moderata as codice2, soglia_idro_elevata as codice3, NULL as codice1, NULL as codice2, NULL as codice3, NULL as codice2, NULL as codice3 FROM $basetable_from a  WHERE a.idstazione = $cod_staz;";
 
 $conn = pg_connect($conn_string);
 if (!$conn) { // Check if valid connection
@@ -576,8 +579,9 @@ function set_options(id_parametro) {
 		soglia3 = <?php echo $soglia3; ?>;
 		soglia = soglia3 + 0.1;
 		<?php } ?>
-		label_soglia2 = 'Livello di attenzione';
-		label_soglia3 = 'Livello di pericolo';
+		label_soglia1 = 'Criticita ordinaria';
+		label_soglia2 = 'Criticita moderata';
+		label_soglia3 = 'Criticita elevata';
                 udm = 'cm';
 		markers_on_line = false;
 		if (soglia1) min_y = Math.min(lowest, soglia1);
@@ -1375,7 +1379,8 @@ if(id_parametro!='ROSE' && id_parametro!='PORTATA_BIS' && id_parametro!='IDRO_BI
 
 <body>
 
-<div id="container" style="width:100%; height:400px;"></div>
+<div id="container" style="width:100%; height:600px;"></div>
+<!--<div id="container" style="height:90%;"></div>-->
 
 </body>
 </html>

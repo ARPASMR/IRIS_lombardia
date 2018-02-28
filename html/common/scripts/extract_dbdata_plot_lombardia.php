@@ -32,7 +32,8 @@ $idsensore = $id_parametro_sensore[1];
 if (isset($_GET['root_dir_html'])) $root_dir_html = $_GET['root_dir_html'];
 
 $realtimetable_from = 'realtime.v_meteo_real_time_lombardia';
-$basetable_from = 'dati_di_base.v_anagraficasensori';
+//$basetable_from = 'dati_di_base.v_anagraficasensori';
+$basetable_from = 'dati_di_base.v_anagrafica_soglie_idro';
 $timezone_data = 'CET';
 //$codice_istat = '006159';
 //$progr_punto_com = '900';
