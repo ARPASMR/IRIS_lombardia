@@ -5,7 +5,7 @@ LAYER
         STATUS OFF
         TYPE POLYGON
         CONNECTIONTYPE POSTGIS
-        CONNECTION "host=localhost port=5432 dbname=iris_base user=webgis password=webgis$2013%"
+        CONNECTION "host=localhost port=5432 dbname=iris_base user=****** password=************"
         PROCESSING "CLOSE_CONNECTION=DEFER"
         #PROCESSING "ITEMS=classe" #sembra essere piu veloce da caricare come WFS...
         DATA "the_geom from realtime.v_allertamento using unique gid using srid=23032"
@@ -127,7 +127,7 @@ LAYER
   	STATUS ON
   	TYPE POINT
   	CONNECTIONTYPE POSTGIS
-  	CONNECTION "host=localhost port=5432 dbname=iris_base user=webgis password=webgis$2013%"
+  	CONNECTION "host=localhost port=5432 dbname=iris_base user=****** password=************"
 	PROCESSING "CLOSE_CONNECTION=DEFER" #sembra essere piu veloce da caricare come WFS...
 	#PROCESSING "ITEMS=dn" 
   	DATA "the_geom from dati_di_base.v_anagraficasensori using unique gid using srid=32632"
@@ -173,7 +173,7 @@ LAYER
         STATUS ON
         TYPE POINT
         CONNECTIONTYPE POSTGIS
-        CONNECTION "host=localhost port=5432 dbname=iris_base user=webgis password=webgis$2013%"
+        CONNECTION "host=localhost port=5432 dbname=iris_base user=****** password=************"
         PROCESSING "CLOSE_CONNECTION=DEFER" #sembra essere piu veloce da caricare come WFS...
         #PROCESSING "ITEMS=dn"
         DATA "the_geom from dati_di_base.rete_meteoidrografica using unique gid using srid=23032"

@@ -4,7 +4,7 @@ LAYER
         STATUS ON
         TYPE POINT
         CONNECTIONTYPE POSTGIS
-        CONNECTION "host=localhost port=5432 dbname=ris_base user=webgis password=webgis$2013%"
+        CONNECTION "host=localhost port=5432 dbname=ris_base user=***** password=************"
         PROCESSING "CLOSE_CONNECTION=DEFER" #sembra essere piu veloce da caricare come WFS...
         #PROCESSING "ITEMS=dn"
         DATA "the_geom from realtime.v_last_terma using unique gid using srid=32632"
